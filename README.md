@@ -1,12 +1,12 @@
 # Laravel Module for Flyo Nitro CMS
 
-```
+```sh
 composer require flyo/nitrocms-laravel
 ```
 
 publish the config
 
-```
+```sh
 artisan vendor:publish
 ```
 
@@ -33,4 +33,16 @@ print_r($block->getConfig());
 print_r($block->getItems());
 print_r($block->getSlots());
 ?>
+```
+
+## Layout Variable
+
+In order to build menus, the `$config` response from the api is a global available variable, for example this could be used in layout-components:
+
+```php
+<div>
+    <?php foreach($config->getNav()->getItems() as $nav): ?>
+        <a href="<?= $nav->getHref(); ?>"><?= $nav->getLabel(); ?></a>
+    <?php endforeach; ?>
+</div>
 ```
