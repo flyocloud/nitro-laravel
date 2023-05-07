@@ -17,7 +17,8 @@
     "require": {
         "illuminate/support": "^10.9",
         "flyo/nitrocms-php" : "dev-main",
-        "illuminate/view": "^10.9"
+        "illuminate/view": "^10.9",
+        "laravel/helpers": "^1.6"
     },
     "extra": {
         "laravel": {

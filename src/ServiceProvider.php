@@ -11,7 +11,7 @@ use Illuminate\Support\ServiceProvider as SupportServiceProvider;
 
 class ServiceProvider extends SupportServiceProvider
 {
-    public function regiser(): void
+    public function register(): void
     {
         $this->publishes([
             __DIR__ . '/../config/flyo.php' => config_path('flyo.php'),
