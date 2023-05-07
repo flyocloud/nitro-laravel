@@ -7,6 +7,7 @@ use Flyo\Api\PagesApi;
 use Flyo\Configuration;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider as SupportServiceProvider;
 
 class ServiceProvider extends SupportServiceProvider
@@ -32,6 +33,8 @@ class ServiceProvider extends SupportServiceProvider
             Configuration::setDefaultConfiguration($config);
 
             $response = (new ConfigApi(null, $config))->config();
+
+            View::share('config', $response);
 
             foreach ($response->getPages() as $page) {
                 Route::get($page, function() use ($page, $config) {
