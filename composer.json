@@ -1,0 +1,29 @@
+{
+    "name": "flyo/nitrocms-laravel",
+    "description": "Flyo Nitro Headless CMS",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Flyo\\Laravel\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Basil Suter",
+            "email": "git@nadar.io"
+        }
+    ],
+    "require": {
+        "illuminate/support": "^10.9",
+        "flyo/nitrocms-php" : "dev-main",
+        "illuminate/view": "^10.9"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Flyo\\Laravel\\ServiceProvider"
+            ]
+        }
+    }
+}
