@@ -40,6 +40,7 @@ print_r($block->getSlots());
 In order to build menus, the `$config` response from the api is a global available variable, for example this could be used in layout-components:
 
 ```php
+/** @var \Flyo\Model\ConfigResponse $config */
 <div>
     <?php foreach($config->getNav()->getItems() as $nav): ?>
         <a href="<?= $nav->getHref(); ?>"><?= $nav->getLabel(); ?></a>
