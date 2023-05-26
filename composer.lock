@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "c074a3b8728dadc9044c40920e988efd",
+    "content-hash": "81b0aabe88492f85a443b5d6460a8a0f",
     "packages": [
         {
             "name": "doctrine/inflector",
@@ -98,17 +98,17 @@
             "time": "2022-10-20T09:10:12+00:00"
         },
         {
-            "name": "flyo/nitrocms-php",
+            "name": "flyo/nitro-php",
             "version": "dev-main",
             "source": {
                 "type": "git",
-                "url": "https://github.com/flyocloud/nitrocms-php-sdk.git",
-                "reference": "921f28047c3538b520d569d045791715e75f5742"
+                "url": "https://github.com/flyocloud/nitro-php-sdk.git",
+                "reference": "367dc410922cb0308cf851b679aa706777111c09"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/flyocloud/nitrocms-php-sdk/zipball/921f28047c3538b520d569d045791715e75f5742",
-                "reference": "921f28047c3538b520d569d045791715e75f5742",
+                "url": "https://api.github.com/repos/flyocloud/nitro-php-sdk/zipball/367dc410922cb0308cf851b679aa706777111c09",
+                "reference": "367dc410922cb0308cf851b679aa706777111c09",
                 "shasum": ""
             },
             "require": {
@@ -134,7 +134,7 @@
             "license": [
                 "mit"
             ],
-            "description": "Flyo Nitro Headless CMS",
+            "description": "Flyo Nitro PHP SDK",
             "homepage": "https://dev.flyo.cloud",
             "keywords": [
                 "api",
@@ -146,28 +146,28 @@
                 "sdk"
             ],
             "support": {
-                "issues": "https://github.com/flyocloud/nitrocms-php-sdk/issues",
-                "source": "https://github.com/flyocloud/nitrocms-php-sdk/tree/main"
+                "issues": "https://github.com/flyocloud/nitro-php-sdk/issues",
+                "source": "https://github.com/flyocloud/nitro-php-sdk/tree/main"
             },
-            "time": "2023-03-03T15:18:49+00:00"
+            "time": "2023-05-26T14:23:27+00:00"
         },
         {
             "name": "guzzlehttp/guzzle",
-            "version": "7.5.1",
+            "version": "7.7.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/guzzle/guzzle.git",
-                "reference": "b964ca597e86b752cd994f27293e9fa6b6a95ed9"
+                "reference": "fb7566caccf22d74d1ab270de3551f72a58399f5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/guzzle/guzzle/zipball/b964ca597e86b752cd994f27293e9fa6b6a95ed9",
-                "reference": "b964ca597e86b752cd994f27293e9fa6b6a95ed9",
+                "url": "https://api.github.com/repos/guzzle/guzzle/zipball/fb7566caccf22d74d1ab270de3551f72a58399f5",
+                "reference": "fb7566caccf22d74d1ab270de3551f72a58399f5",
                 "shasum": ""
             },
             "require": {
                 "ext-json": "*",
-                "guzzlehttp/promises": "^1.5",
+                "guzzlehttp/promises": "^1.5.3 || ^2.0",
                 "guzzlehttp/psr7": "^1.9.1 || ^2.4.5",
                 "php": "^7.2.5 || ^8.0",
                 "psr/http-client": "^1.0",
@@ -179,7 +179,8 @@
             "require-dev": {
                 "bamarni/composer-bin-plugin": "^1.8.1",
                 "ext-curl": "*",
-                "php-http/client-integration-tests": "^3.0",
+                "php-http/client-integration-tests": "dev-master#2c025848417c1135031fdf9c728ee53d0a7ceaee as 3.0.999",
+                "php-http/message-factory": "^1.1",
                 "phpunit/phpunit": "^8.5.29 || ^9.5.23",
                 "psr/log": "^1.1 || ^2.0 || ^3.0"
             },
@@ -193,9 +194,6 @@
                 "bamarni-bin": {
                     "bin-links": true,
                     "forward-command": false
-                },
-                "branch-alias": {
-                    "dev-master": "7.5-dev"
                 }
             },
             "autoload": {
@@ -261,7 +259,7 @@
             ],
             "support": {
                 "issues": "https://github.com/guzzle/guzzle/issues",
-                "source": "https://github.com/guzzle/guzzle/tree/7.5.1"
+                "source": "https://github.com/guzzle/guzzle/tree/7.7.0"
             },
             "funding": [
                 {
@@ -277,38 +275,37 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2023-04-17T16:30:08+00:00"
+            "time": "2023-05-21T14:04:53+00:00"
         },
         {
             "name": "guzzlehttp/promises",
-            "version": "1.5.2",
+            "version": "2.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/guzzle/promises.git",
-                "reference": "b94b2807d85443f9719887892882d0329d1e2598"
+                "reference": "3a494dc7dc1d7d12e511890177ae2d0e6c107da6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/guzzle/promises/zipball/b94b2807d85443f9719887892882d0329d1e2598",
-                "reference": "b94b2807d85443f9719887892882d0329d1e2598",
+                "url": "https://api.github.com/repos/guzzle/promises/zipball/3a494dc7dc1d7d12e511890177ae2d0e6c107da6",
+                "reference": "3a494dc7dc1d7d12e511890177ae2d0e6c107da6",
                 "shasum": ""
             },
             "require": {
-                "php": ">=5.5"
+                "php": "^7.2.5 || ^8.0"
             },
             "require-dev": {
-                "symfony/phpunit-bridge": "^4.4 || ^5.1"
+                "bamarni/composer-bin-plugin": "^1.8.1",
+                "phpunit/phpunit": "^8.5.29 || ^9.5.23"
             },
             "type": "library",
             "extra": {
-                "branch-alias": {
-                    "dev-master": "1.5-dev"
+                "bamarni-bin": {
+                    "bin-links": true,
+                    "forward-command": false
                 }
             },
             "autoload": {
-                "files": [
-                    "src/functions_include.php"
-                ],
                 "psr-4": {
                     "GuzzleHttp\\Promise\\": "src/"
                 }
@@ -345,7 +342,7 @@
             ],
             "support": {
                 "issues": "https://github.com/guzzle/promises/issues",
-                "source": "https://github.com/guzzle/promises/tree/1.5.2"
+                "source": "https://github.com/guzzle/promises/tree/2.0.0"
             },
             "funding": [
                 {
@@ -361,7 +358,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2022-08-28T14:55:35+00:00"
+            "time": "2023-05-21T13:50:22+00:00"
         },
         {
             "name": "guzzlehttp/psr7",
@@ -481,16 +478,16 @@
         },
         {
             "name": "illuminate/bus",
-            "version": "v10.9.0",
+            "version": "v10.12.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/illuminate/bus.git",
-                "reference": "0837f5732e2451bbc2f1c5a497d864d5ed2e5a5b"
+                "reference": "ec2250684df1ff5cddc4ae639ec913996a4bd0be"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/illuminate/bus/zipball/0837f5732e2451bbc2f1c5a497d864d5ed2e5a5b",
-                "reference": "0837f5732e2451bbc2f1c5a497d864d5ed2e5a5b",
+                "url": "https://api.github.com/repos/illuminate/bus/zipball/ec2250684df1ff5cddc4ae639ec913996a4bd0be",
+                "reference": "ec2250684df1ff5cddc4ae639ec913996a4bd0be",
                 "shasum": ""
             },
             "require": {
@@ -530,20 +527,20 @@
                 "issues": "https://github.com/laravel/framework/issues",
                 "source": "https://github.com/laravel/framework"
             },
-            "time": "2023-04-18T13:44:34+00:00"
+            "time": "2023-05-22T13:32:28+00:00"
         },
         {
             "name": "illuminate/collections",
-            "version": "v10.9.0",
+            "version": "v10.12.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/illuminate/collections.git",
-                "reference": "0404a7d44788a43115030d45e9b2c9e1e011d0eb"
+                "reference": "4f3810082e70780547c48d803c2d315e566df6a5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/illuminate/collections/zipball/0404a7d44788a43115030d45e9b2c9e1e011d0eb",
-                "reference": "0404a7d44788a43115030d45e9b2c9e1e011d0eb",
+                "url": "https://api.github.com/repos/illuminate/collections/zipball/4f3810082e70780547c48d803c2d315e566df6a5",
+                "reference": "4f3810082e70780547c48d803c2d315e566df6a5",
                 "shasum": ""
             },
             "require": {
@@ -585,11 +582,11 @@
                 "issues": "https://github.com/laravel/framework/issues",
                 "source": "https://github.com/laravel/framework"
             },
-            "time": "2023-04-24T18:49:40+00:00"
+            "time": "2023-05-09T18:53:34+00:00"
         },
         {
             "name": "illuminate/conditionable",
-            "version": "v10.9.0",
+            "version": "v10.12.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/illuminate/conditionable.git",
@@ -635,7 +632,7 @@
         },
         {
             "name": "illuminate/container",
-            "version": "v10.9.0",
+            "version": "v10.12.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/illuminate/container.git",
@@ -686,16 +683,16 @@
         },
         {
             "name": "illuminate/contracts",
-            "version": "v10.9.0",
+            "version": "v10.12.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/illuminate/contracts.git",
-                "reference": "df6cb22937345609dbd42ef9f9cc62bf9f20104f"
+                "reference": "0f8b766d66df7e0784ea73cfe4caf7a48b623f53"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/illuminate/contracts/zipball/df6cb22937345609dbd42ef9f9cc62bf9f20104f",
-                "reference": "df6cb22937345609dbd42ef9f9cc62bf9f20104f",
+                "url": "https://api.github.com/repos/illuminate/contracts/zipball/0f8b766d66df7e0784ea73cfe4caf7a48b623f53",
+                "reference": "0f8b766d66df7e0784ea73cfe4caf7a48b623f53",
                 "shasum": ""
             },
             "require": {
@@ -730,11 +727,11 @@
                 "issues": "https://github.com/laravel/framework/issues",
                 "source": "https://github.com/laravel/framework"
             },
-            "time": "2023-04-17T16:01:53+00:00"
+            "time": "2023-05-01T15:41:14+00:00"
         },
         {
             "name": "illuminate/events",
-            "version": "v10.9.0",
+            "version": "v10.12.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/illuminate/events.git",
@@ -789,7 +786,7 @@
         },
         {
             "name": "illuminate/filesystem",
-            "version": "v10.9.0",
+            "version": "v10.12.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/illuminate/filesystem.git",
@@ -853,7 +850,7 @@
         },
         {
             "name": "illuminate/macroable",
-            "version": "v10.9.0",
+            "version": "v10.12.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/illuminate/macroable.git",
@@ -899,7 +896,7 @@
         },
         {
             "name": "illuminate/pipeline",
-            "version": "v10.9.0",
+            "version": "v10.12.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/illuminate/pipeline.git",
@@ -947,16 +944,16 @@
         },
         {
             "name": "illuminate/support",
-            "version": "v10.9.0",
+            "version": "v10.12.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/illuminate/support.git",
-                "reference": "d79c0b3d852fd3cd52d5caac585cdf5ce3d872ff"
+                "reference": "2ec8978cc9eda6848389fa623018603ef920067b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/illuminate/support/zipball/d79c0b3d852fd3cd52d5caac585cdf5ce3d872ff",
-                "reference": "d79c0b3d852fd3cd52d5caac585cdf5ce3d872ff",
+                "url": "https://api.github.com/repos/illuminate/support/zipball/2ec8978cc9eda6848389fa623018603ef920067b",
+                "reference": "2ec8978cc9eda6848389fa623018603ef920067b",
                 "shasum": ""
             },
             "require": {
@@ -1014,20 +1011,20 @@
                 "issues": "https://github.com/laravel/framework/issues",
                 "source": "https://github.com/laravel/framework"
             },
-            "time": "2023-04-21T15:14:58+00:00"
+            "time": "2023-05-23T17:29:20+00:00"
         },
         {
             "name": "illuminate/view",
-            "version": "v10.9.0",
+            "version": "v10.12.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/illuminate/view.git",
-                "reference": "81c2d4e35774714ccd53f3b8fba2afe7ee093609"
+                "reference": "aebc2fa44b2366e87652d550ceb9871183dd7422"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/illuminate/view/zipball/81c2d4e35774714ccd53f3b8fba2afe7ee093609",
-                "reference": "81c2d4e35774714ccd53f3b8fba2afe7ee093609",
+                "url": "https://api.github.com/repos/illuminate/view/zipball/aebc2fa44b2366e87652d550ceb9871183dd7422",
+                "reference": "aebc2fa44b2366e87652d550ceb9871183dd7422",
                 "shasum": ""
             },
             "require": {
@@ -1068,7 +1065,7 @@
                 "issues": "https://github.com/laravel/framework/issues",
                 "source": "https://github.com/laravel/framework"
             },
-            "time": "2023-04-04T21:48:21+00:00"
+            "time": "2023-05-12T19:36:39+00:00"
         },
         {
             "name": "laravel/helpers",
@@ -2091,7 +2088,7 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
-        "flyo/nitrocms-php": 20
+        "flyo/nitro-php": 20
     },
     "prefer-stable": false,
     "prefer-lowest": false,

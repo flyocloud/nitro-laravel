@@ -1,7 +1,7 @@
-# Laravel Module for Flyo Nitro CMS
+# Flyo Nitro Laravel Framework Module
 
 ```sh
-composer require flyo/nitrocms-laravel
+composer require flyo/nitro-laravel
 ```
 
 publish the config
@@ -23,7 +23,7 @@ Add/Adjust the `cms.blade.php` view file in `resources/views`, this is where the
 <x-flyo::page :page=$page />
 ```
 
-Now all component block views are looked up in `ressources/views/flyo`, for example if you have a Flyo Nitro CMS component block with name Text the view file would be `ressources/views/flyo/Text.blade.php` utilizing the following variables:
+Now all component block views are looked up in `ressources/views/flyo`, for example if you have a Flyo Nitro component block with name Text the view file would be `ressources/views/flyo/Text.blade.php` utilizing the following variables:
 
 ```php
 <?php

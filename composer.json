@@ -1,6 +1,6 @@
 {
-    "name": "flyo/nitrocms-laravel",
-    "description": "Flyo Nitro Headless CMS",
+    "name": "flyo/nitro-laravel",
+    "description": "Flyo Nitro Laravel Framework Module",
     "type": "library",
     "license": "MIT",
     "autoload": {
@@ -16,7 +16,7 @@
     ],
     "require": {
         "illuminate/support": "^10.9",
-        "flyo/nitrocms-php" : "dev-main",
+        "flyo/nitro-php" : "dev-main",
         "illuminate/view": "^10.9",
         "laravel/helpers": "^1.6"
     },
