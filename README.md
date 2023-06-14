@@ -47,3 +47,7 @@ In order to build menus, the `$config` response from the api is a global availab
     <?php endforeach; ?>
 </div>
 ```
+
+## Documentation
+
+[Read More in the Docs](https://dev.flyo.cloud/nitro/php)
