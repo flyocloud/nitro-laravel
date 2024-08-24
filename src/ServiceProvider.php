@@ -7,6 +7,7 @@ use Flyo\Api\PagesApi;
 use Flyo\Configuration;
 use Flyo\Laravel\Components\Head;
 use Flyo\Model\Block;
+use Flyo\Model\ConfigResponse;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Contracts\View\Factory as ViewFactory;
 use Illuminate\Support\Facades\Blade;
@@ -35,7 +36,15 @@ class ServiceProvider extends SupportServiceProvider
 
             Configuration::setDefaultConfiguration($config);
 
+            $this->app->singleton(Configuration::class, function () use ($config) {
+                return $config;
+            });
+
             $response = (new ConfigApi(null, $config))->config();
+
+            $this->app->singleton(ConfigResponse::class, function () use ($response) {
+                return $response;
+            });
             $viewFactory->share('config', $response);
 
             Blade::directive('editable', function ($expression) {

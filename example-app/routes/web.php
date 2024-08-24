@@ -1,7 +1,6 @@
 <?php
 
+use App\Http\Controllers\TierController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/foobar-weclome', function () {
-    return view('welcome');
-});
+Route::get('/tier/{slug}', [TierController::class, 'show']);

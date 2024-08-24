@@ -104,6 +104,60 @@ A full layout example which could be placed in `resources/views/layouts/app.blad
 </html>
 ```
 
+## Entity Detail
+
+To display an entity detail page, you have to register a route, create a controller and a view file:
+
+Routing File example
+
+```php
+<?php
+
+use App\Http\Controllers\TierController;
+use Illuminate\Support\Facades\Route;
+
+Route::get('/tier/{slug}', [TierController::class, 'show']);
+```
+
+The Controller:
+
+```php
+<?php
+
+namespace App\Http\Controllers;
+
+use Flyo\Api\EntitiesApi;
+use Flyo\Configuration;
+use Illuminate\Contracts\View\Factory;
+
+class TierController extends Controller
+{
+    public function __construct(public Factory $viewFactory, public Configuration $config) {}
+
+    public function show(string $slug)
+    {
+        $api = new EntitiesApi(null, $this->config);
+
+        $entity = $api->entityBySlug($slug);
+
+        return $this->viewFactory->make('tier', [
+            'entity' => $entity,
+        ]);
+    }
+}
+```
+
+And the example `tier.blade.php` in the `resources/views` folder:
+
+```blade
+<?php
+/** @var \Flyo\Model\Entity $entity */
+?>
+<x-layout>
+    <h1><?= $entity->getModel()->image->source; ?></h1>
+</x-layout>
+```
+
 ## Documentation
 
 [Read More in the Docs](https://dev.flyo.cloud/nitro/php)
