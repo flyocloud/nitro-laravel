@@ -1,6 +1,6 @@
 <?php
 
 return [
-    'token' => env('FLYO_TOKEN', 'N0vxR2275jSoEvFion7UNSGKS6JscMM2GvOZUo4n95zFroAZ'),
-    '',
+    'token' => env('FLYO_TOKEN', false),
+    'live_edit' => env('FLYO_LIVE_EDIT', true),
 ];
