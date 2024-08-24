@@ -88,6 +88,10 @@ EOT;
                 Route::get($page, function () use ($page, $config, $viewFactory) {
                     $response = (new PagesApi(null, $config))->page($page);
 
+                    Head::metaTitle($response->getMetaJson()->getTitle());
+                    Head::metaDescription($response->getMetaJson()->getDescription());
+                    Head::metaImage($response->getMetaJson()->getImage());
+                    
                     return $viewFactory->make('cms', ['page' => $response]);
                 });
             }

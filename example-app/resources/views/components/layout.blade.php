@@ -6,8 +6,6 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>{{ $title ?? 'Flyo Nitro' }}</title>
-        <meta name="description" content="{{ $description ?? 'Flyo Nitro' }}">
         <x-flyo::head />
     </head>
     <body>
