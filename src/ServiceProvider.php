@@ -38,24 +38,20 @@ class ServiceProvider extends SupportServiceProvider
             $response = (new ConfigApi(null, $config))->config();
             $viewFactory->share('config', $response);
 
-            $isLiveEdit = $configRepository->get('flyo.live_edit', false);
-
-            Blade::directive('editable', function ($expression) use ($isLiveEdit) {
-
-                // problem with caching!!!
-                if (! $isLiveEdit) {
-                    return '';
-                }
-
+            Blade::directive('editable', function ($expression) {
                 return "<?php
-                    \$block = {$expression};
-                    if (!\$block instanceof ".Block::class.") {
-                        throw new \InvalidArgumentException('The argument passed to @editable must be an instance of Flyo\\Model\\Block.');
+                    if (app('config')->get('flyo.live_edit', false)) {
+                        \$block = {$expression};
+                        if (!\$block instanceof ".Block::class.") {
+                            throw new \InvalidArgumentException('The argument passed to @editable must be an instance of Flyo\\Model\\Block.');
+                        }
+                        \$uid = \$block->getUid();
+                        echo ' onclick=\"openBlockInFlyo(\''.\$uid.'\')\" ';
                     }
-                    \$uid = \$block->getUid();
-                    echo ' onclick=\"openBlockInFlyo(\''.\$uid.'\')\" ';
                 ?>";
             });
+
+            $isLiveEdit = $configRepository->get('flyo.live_edit', false);
 
             if ($isLiveEdit) {
                 Head::$scripts[] = 'window.addEventListener("message", (event) => { if (event.data?.action === \'pageRefresh\') { window.location.reload(true); }});';
