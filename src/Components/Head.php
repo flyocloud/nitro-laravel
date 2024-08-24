@@ -40,22 +40,22 @@ class Head extends Component
     public function render(): string
     {
         $html = '';
-     
+
         if (self::$metas['title']) {
-            $html .= '<title>' . self::$metas['title'] . '</title>';
-            $html .= '<meta property="og:title" content="' . self::$metas['title'] . '">';
-            $html .= '<meta name="twitter:title" content="' . self::$metas['title'] . '">';
+            $html .= '<title>'.self::$metas['title'].'</title>';
+            $html .= '<meta property="og:title" content="'.self::$metas['title'].'">';
+            $html .= '<meta name="twitter:title" content="'.self::$metas['title'].'">';
         }
 
         if (self::$metas['description']) {
-            $html .= '<meta name="description" content="' . self::$metas['description'] . '">';
-            $html .= '<meta property="og:description" content="' . self::$metas['description'] . '">';
-            $html .= '<meta name="twitter:description" content="' . self::$metas['description'] . '">';
+            $html .= '<meta name="description" content="'.self::$metas['description'].'">';
+            $html .= '<meta property="og:description" content="'.self::$metas['description'].'">';
+            $html .= '<meta name="twitter:description" content="'.self::$metas['description'].'">';
         }
 
         if (self::$metas['image']) {
-            $html .= '<meta property="og:image" content="' . self::$metas['image'] . '">';
-            $html .= '<meta name="twitter:image" content="' . self::$metas['image'] . '">';
+            $html .= '<meta property="og:image" content="'.self::$metas['image'].'">';
+            $html .= '<meta name="twitter:image" content="'.self::$metas['image'].'">';
         }
 
         if (count(self::$scripts) > 0) {

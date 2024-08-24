@@ -91,7 +91,7 @@ EOT;
                     Head::metaTitle($response->getMetaJson()->getTitle());
                     Head::metaDescription($response->getMetaJson()->getDescription());
                     Head::metaImage($response->getMetaJson()->getImage());
-                    
+
                     return $viewFactory->make('cms', ['page' => $response]);
                 });
             }
