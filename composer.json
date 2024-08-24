@@ -15,9 +15,9 @@
         }
     ],
     "require": {
-        "illuminate/support": "^10.9",
-        "flyo/nitro-php" : "dev-main",
-        "illuminate/view": "^10.9",
+        "flyo/nitro-php" : "^1.0",
+        "illuminate/support": "^11.0",
+        "illuminate/view": "^11",
         "laravel/helpers": "^1.6"
     },
     "extra": {
@@ -26,5 +26,12 @@
                 "Flyo\\Laravel\\ServiceProvider"
             ]
         }
+    },
+    "require-dev": {
+        "larastan/larastan": "^2.0",
+        "laravel/pint": "^1.17"
+    },
+    "scripts": {
+        "pint": "./vendor/bin/pint"
     }
 }
