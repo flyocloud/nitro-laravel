@@ -63,25 +63,8 @@ class ServiceProvider extends SupportServiceProvider
             $isLiveEdit = $configRepository->get('flyo.live_edit', false);
 
             if ($isLiveEdit) {
-                Head::$scripts[] = 'window.addEventListener("message", (event) => { if (event.data?.action === \'pageRefresh\') { window.location.reload(true); }});';
-
-                Head::$scripts[] = <<<'EOT'
-                function getActualWindow() {
-    if (window === window.top) {
-        return window;
-    } else if (window.parent) {
-        return window.parent;
-    }
-    return window;
-  }
-
-function openBlockInFlyo(uid) {
-    getActualWindow().postMessage({
-        action: 'openEdit',
-        data: JSON.parse(JSON.stringify({item: {uid: uid}}))
-    },'https://flyo.cloud')
-}
-EOT;
+                Head::script('window.addEventListener("message",event=>{if(event.data?.action===\'pageRefresh\'){window.location.reload(true);}});');
+                Head::script('function getActualWindow(){return window===window.top?window:window.parent?window.parent:window;}function openBlockInFlyo(uid){getActualWindow().postMessage({action:\'openEdit\',data:JSON.parse(JSON.stringify({item:{uid:uid}}))},\'https://flyo.cloud\')}');
             }
 
             foreach ($response->getPages() as $page) {

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "54f5fecf2fceccdab8a311bac51b6e04",
+    "content-hash": "030324745927fa67a2a9a15d66cf8819",
     "packages": [
         {
             "name": "carbonphp/carbon-doctrine-types",
@@ -218,6 +218,53 @@
                 "source": "https://github.com/flyocloud/nitro-php-sdk/tree/1.0.1"
             },
             "time": "2024-08-23T15:16:35+00:00"
+        },
+        {
+            "name": "flyo/nitro-php-bridge",
+            "version": "1.2.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/flyocloud/nitro-php-bridge.git",
+                "reference": "b1e78d99517ec8bd1627e6055e44998294714098"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/flyocloud/nitro-php-bridge/zipball/b1e78d99517ec8bd1627e6055e44998294714098",
+                "reference": "b1e78d99517ec8bd1627e6055e44998294714098",
+                "shasum": ""
+            },
+            "require": {
+                "nadar/prosemirror-json-parser": "^1.0",
+                "php": "^8.1"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^3.2",
+                "phpstan/phpstan": "^1.7",
+                "phpunit/phpunit": "^10",
+                "rector/rector": "^0.14.2"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Flyo\\Bridge\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Nadar",
+                    "email": "git@nadar.io"
+                }
+            ],
+            "description": "This is can be used in backend projects to make the bridge between Flyo Cloud and your application.",
+            "support": {
+                "issues": "https://github.com/flyocloud/nitro-php-bridge/issues",
+                "source": "https://github.com/flyocloud/nitro-php-bridge/tree/1.2.0"
+            },
+            "time": "2024-04-22T19:46:40+00:00"
         },
         {
             "name": "guzzlehttp/guzzle",
@@ -1197,6 +1244,52 @@
                 "source": "https://github.com/laravel/helpers/tree/v1.7.0"
             },
             "time": "2023-11-30T14:09:05+00:00"
+        },
+        {
+            "name": "nadar/prosemirror-json-parser",
+            "version": "1.2.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/nadar/prosemirror-json-parser.git",
+                "reference": "c948ffd4e99e40862c5488b63c166f609a1ba2fb"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/nadar/prosemirror-json-parser/zipball/c948ffd4e99e40862c5488b63c166f609a1ba2fb",
+                "reference": "c948ffd4e99e40862c5488b63c166f609a1ba2fb",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^8.1"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^3.2",
+                "phpstan/phpstan": "^1.7",
+                "phpunit/phpunit": "^10",
+                "rector/rector": "^0.14.2"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Nadar\\ProseMirror\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Nadar",
+                    "email": "git@nadar.io"
+                }
+            ],
+            "description": "A library that easily converts ProseMirror/TipTap JSON into customizable HTML elements.",
+            "support": {
+                "issues": "https://github.com/nadar/prosemirror-json-parser/issues",
+                "source": "https://github.com/nadar/prosemirror-json-parser/tree/1.2.1"
+            },
+            "time": "2024-04-10T10:22:29+00:00"
         },
         {
             "name": "nesbot/carbon",
