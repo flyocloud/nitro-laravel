@@ -6,7 +6,7 @@
         <a href="<?= $item->link->routes->detail; ?>">
             <h1><?= $item->title; ?></h1>
             <h2><?= $item->subtitle; ?></h2>
-            <img width="300" src="<?= $item->image->source; ?>" alt="<?= $item->title; ?>">
+            <?= Flyo\Bridge\Image::tag($item->image->source, $item->title, 300, 300); ?>
         </a>
     <?php endforeach; ?>
 </div>
