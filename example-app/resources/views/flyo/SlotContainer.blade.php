@@ -1,8 +1,8 @@
 <?php
 /** @var \Flyo\Model\Block $block */
-
-use Flyo\Bridge\Wysiwyg;
-
+$slotContainerFooBarName = $block->getSlots()['slotcontainername'];
 ?>
-
-<?php print_r($block) ?>
+<div style="background-color: red;">
+    <h1>Slot Container</h1>
+    <x-flyo::slot :container=$slotContainerFooBarName />
+</div>

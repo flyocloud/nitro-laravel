@@ -61,27 +61,27 @@ class Head extends Component
         $html = '';
 
         if (self::$metas['title']) {
-            $html .= '<title>'.self::$metas['title'].'</title>' . PHP_EOL;
-            $html .= '<meta property="og:title" content="'.self::$metas['title'].'">' . PHP_EOL;
-            $html .= '<meta name="twitter:title" content="'.self::$metas['title'].'">' . PHP_EOL;
+            $html .= '<title>'.self::$metas['title'].'</title>'.PHP_EOL;
+            $html .= '<meta property="og:title" content="'.self::$metas['title'].'">'.PHP_EOL;
+            $html .= '<meta name="twitter:title" content="'.self::$metas['title'].'">'.PHP_EOL;
         }
 
         if (self::$metas['description']) {
-            $html .= '<meta name="description" content="'.self::$metas['description'].'">' . PHP_EOL;
-            $html .= '<meta property="og:description" content="'.self::$metas['description'].'">' . PHP_EOL;
-            $html .= '<meta name="twitter:description" content="'.self::$metas['description'].'">' . PHP_EOL;
+            $html .= '<meta name="description" content="'.self::$metas['description'].'">'.PHP_EOL;
+            $html .= '<meta property="og:description" content="'.self::$metas['description'].'">'.PHP_EOL;
+            $html .= '<meta name="twitter:description" content="'.self::$metas['description'].'">'.PHP_EOL;
         }
 
         if (self::$metas['image']) {
             $img = Image::source(self::$metas['image'], 1200, 630, 'jpg');
-            $html .= '<meta property="og:image" content="'.$img.'">' . PHP_EOL;
-            $html .= '<meta name="twitter:image" content="'.$img.'">' . PHP_EOL;
+            $html .= '<meta property="og:image" content="'.$img.'">'.PHP_EOL;
+            $html .= '<meta name="twitter:image" content="'.$img.'">'.PHP_EOL;
         }
 
         if (count(self::$scripts) > 0) {
             $html .= '<script>';
             foreach (self::$scripts as $script) {
-                $html .= $script  . PHP_EOL;
+                $html .= $script.PHP_EOL;
             }
             $html .= '</script>';
         }
