@@ -6,11 +6,13 @@ use Flyo\Api\ConfigApi;
 use Flyo\Api\PagesApi;
 use Flyo\Configuration;
 use Flyo\Laravel\Components\Head;
+use Flyo\Laravel\Middleware\CachingHeaders;
 use Flyo\Model\Block;
 use Flyo\Model\ConfigResponse;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Contracts\View\Factory as ViewFactory;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider as SupportServiceProvider;
 
@@ -62,6 +64,8 @@ class ServiceProvider extends SupportServiceProvider
 
             $isLiveEdit = $configRepository->get('flyo.live_edit', false);
 
+            Log::debug('Flyo live edit is '.($isLiveEdit ? 'enabled' : 'disabled'));
+
             if ($isLiveEdit) {
                 Head::script('window.addEventListener("message",event=>{if(event.data?.action===\'pageRefresh\'){window.location.reload(true);}});');
                 Head::script('function getActualWindow(){return window===window.top?window:window.parent?window.parent:window;}function openBlockInFlyo(uid){getActualWindow().postMessage({action:\'openEdit\',data:JSON.parse(JSON.stringify({item:{uid:uid}}))},\'https://flyo.cloud\')}');
@@ -76,7 +80,7 @@ class ServiceProvider extends SupportServiceProvider
                     Head::metaImage($response->getMetaJson()->getImage());
 
                     return $viewFactory->make('cms', ['page' => $response]);
-                });
+                })->middleware(CachingHeaders::class);
             }
 
         }

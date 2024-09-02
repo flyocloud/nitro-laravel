@@ -45,7 +45,7 @@ To make the block editable (which means clicking in the block, will correctly ad
 <?php
 /** @var \Flyo\Model\Block $block */
 ?>
-<div @editable($block) style="border:1px solid gree; padding:20px;">
+<div @editable($block) style="border:1px solid blue; padding:20px;">
     <?php print_r($block->getContent()); ?>
 <div>
 ```
