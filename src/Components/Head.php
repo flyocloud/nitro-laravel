@@ -60,19 +60,19 @@ class Head extends Component
     {
         $html = '';
 
-        if (self::$metas['title']) {
+        if (self::$metas['title'] ?? false) {
             $html .= '<title>'.self::$metas['title'].'</title>'.PHP_EOL;
             $html .= '<meta property="og:title" content="'.self::$metas['title'].'">'.PHP_EOL;
             $html .= '<meta name="twitter:title" content="'.self::$metas['title'].'">'.PHP_EOL;
         }
 
-        if (self::$metas['description']) {
+        if (self::$metas['description'] ?? false) {
             $html .= '<meta name="description" content="'.self::$metas['description'].'">'.PHP_EOL;
             $html .= '<meta property="og:description" content="'.self::$metas['description'].'">'.PHP_EOL;
             $html .= '<meta name="twitter:description" content="'.self::$metas['description'].'">'.PHP_EOL;
         }
 
-        if (self::$metas['image']) {
+        if (self::$metas['image'] ?? false) {
             $img = Image::source(self::$metas['image'], 1200, 630, 'jpg');
             $html .= '<meta property="og:image" content="'.$img.'">'.PHP_EOL;
             $html .= '<meta name="twitter:image" content="'.$img.'">'.PHP_EOL;
