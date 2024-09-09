@@ -2,10 +2,12 @@
 
 return [
     // The token to authenticate the application with the Flyo API.
-    'token' => env('FLYO_TOKEN', 'ADD_YOUR_TOKEN_HERE'),
+    // The production token can be set here, if there is no token set in the .env file, the production token will be used.
+    'token' => env('FLYO_TOKEN', 'ADD_PRODUCTION_TOKEN_HERE'),
 
     // If enabled, the user can interact with the components, also it represents the application to be in development mode.
-    'live_edit' => env('FLYO_LIVE_EDIT', true),
+    // The default setting false represents the application to be in production mode.
+    'live_edit' => env('FLYO_LIVE_EDIT', false),
 
     // The namespace for the views, which means the views will be stored in resources/views/flyo.
     'views_namespace' => 'flyo',
