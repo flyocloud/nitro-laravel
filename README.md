@@ -170,7 +170,7 @@ public function __construct(public Flyo\Model\ConfigResponse $config)
 
 // or facade
 /** @var Flyo\Model\ConfigResponse $cfg */
-$configResponse = App::make(Flyo\Model\ConfigResponse::class);
+$configResponse = app(Flyo\Model\ConfigResponse::class);
 ```
 
 Same for the page response
@@ -183,7 +183,7 @@ public function __construct(public Flyo\Model\Page $page)
 
 // or facade
 /** @var Flyo\Model\Page $cfg */
-$page = App::make(Flyo\Model\Page::class);
+$page = app(Flyo\Model\Page::class);
 ```
 
 ## Documentation
