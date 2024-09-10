@@ -158,6 +158,34 @@ And the example `tier.blade.php` in the `resources/views` folder:
 </x-layout>
 ```
 
+## Misc
+
+In order to resolve the Configuration object somewhere in your application, you can use the following code:
+
+```php
+// use DI to resolve the Configuration object
+public function __construct(public Flyo\Model\ConfigResponse $config)
+{
+}
+
+// or facade
+/** @var Flyo\Model\ConfigResponse $cfg */
+$configResponse = App::make(Flyo\Model\ConfigResponse::class);
+```
+
+Same for the page response
+
+```php
+// use DI to resolve the Configuration object
+public function __construct(public Flyo\Model\Page $page)
+{
+}
+
+// or facade
+/** @var Flyo\Model\Page $cfg */
+$page = App::make(Flyo\Model\Page::class);
+```
+
 ## Documentation
 
 [Read More in the Docs](https://dev.flyo.cloud/nitro/php)

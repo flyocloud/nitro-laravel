@@ -9,6 +9,7 @@ use Flyo\Laravel\Components\Head;
 use Flyo\Laravel\Middleware\CachingHeaders;
 use Flyo\Model\Block;
 use Flyo\Model\ConfigResponse;
+use Flyo\Model\Page;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Contracts\View\Factory as ViewFactory;
 use Illuminate\Support\Facades\Blade;
@@ -73,13 +74,17 @@ class ServiceProvider extends SupportServiceProvider
 
             foreach ($response->getPages() as $page) {
                 Route::get($page, function () use ($page, $config, $viewFactory) {
-                    $response = (new PagesApi(null, $config))->page($page);
+                    $pageResponse = (new PagesApi(null, $config))->page($page);
 
-                    Head::metaTitle($response->getMetaJson()->getTitle());
-                    Head::metaDescription($response->getMetaJson()->getDescription());
-                    Head::metaImage($response->getMetaJson()->getImage());
+                    $this->app->singleton(Page::class, function () use ($pageResponse) {
+                        return $pageResponse;
+                    });
 
-                    return $viewFactory->make('cms', ['page' => $response]);
+                    Head::metaTitle($pageResponse->getMetaJson()->getTitle());
+                    Head::metaDescription($pageResponse->getMetaJson()->getDescription());
+                    Head::metaImage($pageResponse->getMetaJson()->getImage());
+
+                    return $viewFactory->make('cms', ['page' => $pageResponse]);
                 })->middleware(CachingHeaders::class);
             }
 
