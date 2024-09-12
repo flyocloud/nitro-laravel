@@ -12,10 +12,26 @@ use Illuminate\Contracts\View\View;
 
 /**
  * Generic Entity Controller Handling.
- * 
+ *
  * ```php
  * Route::get('/poi/{slug}', function($slug) {
  *   return app(EntityController::class)->resolve(fn(EntitiesApi $api, $param) => $api->entityBySlug($param))->render($slug, 'poi.detail');
+ * });
+ * ```
+ *
+ * A few more examples with an explicit entity type id:
+ *
+ * ```php
+ * Route::get('/story/{slug}', function($slug) {
+ *   return app(EntityController::class)->resolve(fn(EntitiesApi $api, $param) => $api->entityBySlug($param, 115))->render($slug, 'story.detail');
+ * });
+ * ```
+ *
+ * with by unique id
+ *
+ * ```php
+ * Route::get('/event/{uid}', function($uid) {
+ *   return app(EntityController::class)->resolve(fn(EntitiesApi $api, $param) => $api->entityByUniqueid($param, 117))->render($uid, 'event.detail');
  * });
  * ```
  */

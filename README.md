@@ -158,6 +158,27 @@ And the example `tier.blade.php` in the `resources/views` folder:
 </x-layout>
 ```
 
+There is also a more generic controller available which can be used to display any entity detail page:
+
+```php
+Route::get('/poi/{slug}', function ($slug) {
+    return app(Flyo\Laravel\Controllers\EntityController::class)->resolve(fn (Flyo\Api\EntitiesApi $api, $param) => $api->entityBySlug($param, 116))->render($slug, 'poi');
+});
+```
+
+where the `poi.blade.php` file in the `resources/views` folder could look like this:
+
+```blade
+<?php
+/** @var Flyo\Model\EntityInterface $entity */
+/** @var object $model */
+?>
+<x-layout>
+    <?php print_r($model); ?>
+    <?php print_r($entity); ?>
+</x-layout>
+```
+
 ## Misc
 
 In order to resolve the Configuration object somewhere in your application, you can use the following code:
