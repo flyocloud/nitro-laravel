@@ -15,7 +15,7 @@
         }
     ],
     "require": {
-        "flyo/nitro-php" : "^1.0",
+        "flyo/nitro-php" : "^1.1",
         "illuminate/support": "^11.0",
         "illuminate/view": "^11",
         "laravel/helpers": "^1.6",
