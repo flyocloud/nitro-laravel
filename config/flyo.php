@@ -19,4 +19,8 @@ return [
     // TTL (Time-To-Live) for server-side cache headers, in seconds.
     // Default is 1200 seconds (20 minutes) its only availble if the liveEdit is disabled. Use 0 to disable server caching.
     'client_cache_ttl' => env('FLYO_CLIENT_CACHE_TTL', 1200),
+
+    // The default route to be used for the detail pages.
+    // Routes/Links can be defined in the Flyo interface for each corresponding entity, the default name is 'detail'.
+    'default_route' => env('FLYO_DEFAULT_ROUTE', 'detail'),
 ];

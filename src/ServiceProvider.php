@@ -6,6 +6,7 @@ use Flyo\Api\ConfigApi;
 use Flyo\Api\PagesApi;
 use Flyo\Configuration;
 use Flyo\Laravel\Components\Head;
+use Flyo\Laravel\Controllers\SitemapController;
 use Flyo\Laravel\Middleware\CachingHeaders;
 use Flyo\Model\Block;
 use Flyo\Model\ConfigResponse;
@@ -72,6 +73,8 @@ class ServiceProvider extends SupportServiceProvider
                 Head::script('function getActualWindow(){return window===window.top?window:window.parent?window.parent:window;}function openBlockInFlyo(uid){getActualWindow().postMessage({action:\'openEdit\',data:JSON.parse(JSON.stringify({item:{uid:uid}}))},\'https://flyo.cloud\')}');
             }
 
+            Route::get('/sitemap.xml', [SitemapController::class, 'render'])->middleware(CachingHeaders::class);
+
             foreach ($response->getPages() as $page) {
                 Route::get($page, function () use ($page, $config, $viewFactory) {
                     $pageResponse = (new PagesApi(null, $config))->page($page);
@@ -87,7 +90,6 @@ class ServiceProvider extends SupportServiceProvider
                     return $viewFactory->make('cms', ['page' => $pageResponse]);
                 })->middleware(CachingHeaders::class);
             }
-
         }
     }
 }
