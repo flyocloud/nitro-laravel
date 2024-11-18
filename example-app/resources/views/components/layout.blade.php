@@ -21,5 +21,7 @@
         </ul>
         <hr/>
         {{ $slot }}
+
+        <x-flyo::debug-info />
     </body>
 </html>
