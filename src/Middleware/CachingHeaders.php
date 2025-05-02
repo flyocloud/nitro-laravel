@@ -17,7 +17,13 @@ class CachingHeaders
         $response = $next($request);
         $isLiveEdit = $this->config->get('flyo.live_edit', false);
 
-        if ($response->isSuccessful() && ! Env::get('APP_DEBUG') && ! $isLiveEdit) {
+        $isDebug = Env::get('APP_DEBUG');
+
+        if ($isDebug) {
+            $response->headers->set('Flyo-Live-Edit', $isLiveEdit ? 1 : 0);
+        }
+
+        if ($response->isSuccessful() && ! $isDebug && ! $isLiveEdit) {
             $serverCacheTtl = $this->config->get('flyo.server_cache_ttl', 1200);
             $serverCacheTtl = is_numeric($serverCacheTtl) ? (int) $serverCacheTtl : 0;
             if ($serverCacheTtl > 0) {
