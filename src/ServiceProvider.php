@@ -75,21 +75,23 @@ class ServiceProvider extends SupportServiceProvider
 
             Route::get('/sitemap.xml', [SitemapController::class, 'render'])->middleware(CachingHeaders::class);
 
-            foreach ($response->getPages() as $page) {
-                Route::get($page, function () use ($page, $config, $viewFactory) {
-                    $pageResponse = (new PagesApi(null, $config))->page($page);
+            Route::middleware('web')->group(function () use ($response, $config, $viewFactory) {
+                foreach ($response->getPages() as $page) {
+                    Route::get($page, function () use ($page, $config, $viewFactory) {
+                        $pageResponse = (new PagesApi(null, $config))->page($page);
 
-                    $this->app->singleton(Page::class, function () use ($pageResponse) {
-                        return $pageResponse;
-                    });
+                        $this->app->singleton(Page::class, function () use ($pageResponse) {
+                            return $pageResponse;
+                        });
 
-                    Head::metaTitle($pageResponse->getMetaJson()->getTitle());
-                    Head::metaDescription($pageResponse->getMetaJson()->getDescription());
-                    Head::metaImage($pageResponse->getMetaJson()->getImage());
+                        Head::metaTitle($pageResponse->getMetaJson()->getTitle());
+                        Head::metaDescription($pageResponse->getMetaJson()->getDescription());
+                        Head::metaImage($pageResponse->getMetaJson()->getImage());
 
-                    return $viewFactory->make('cms', ['page' => $pageResponse]);
-                })->middleware(CachingHeaders::class);
-            }
+                        return $viewFactory->make('cms', ['page' => $pageResponse]);
+                    })->middleware(CachingHeaders::class);
+                }
+            });
         }
     }
 }
