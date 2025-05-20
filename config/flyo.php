@@ -23,4 +23,16 @@ return [
     // The default route to be used for the detail pages.
     // Routes/Links can be defined in the Flyo interface for each corresponding entity, the default name is 'detail'.
     'default_route' => env('FLYO_DEFAULT_ROUTE', 'detail'),
+
+    // The list of supported locales as defined in the Flyo interface.
+    // By default, APP_LOCALE will be used for routes without a locale prefix.
+    // If this array is empty, no locale prefixing will be applied to config or page requests,
+    // effectively disabling multilingual support for the website.
+    'locales' => [
+        /*
+        'en',
+        'de',
+        'fr',
+        */
+    ],
 ];

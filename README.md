@@ -179,6 +179,33 @@ where the `poi.blade.php` file in the `resources/views` folder could look like t
 </x-layout>
 ```
 
+## Multilanguage
+
+The requests will pass the configured APP_LOCALE (which is used in laravel for localization) to the flyo api. 
+
+Defined the available locales in the `config/flyo.php` file:
+
+```php
+'locales' => [
+    'de',
+    'en',
+],
+```
+
+The ServiceProvider will check for segments /de, /en in the url and set the locale in the request object if the locale is available in the config file.
+
+Pass the language for entity Detail Requests:
+
+```php
+Route::get('{locale}/ort/{slug}', function ($locale, $slug) {
+    App::setLocale($locale); // set the locale in laravel
+    return app(EntityController::class)
+        ->resolve(fn (EntitiesApi $api, $param) => $api->entityBySlug($param, 245, $locale)) // <!-- pass the locale here
+        ->render($slug, 'poi');
+})->where('lang', '[a-z]{2}')->name('poi');
+```
+
+
 ## Misc
 
 In order to resolve the Configuration object somewhere in your application, you can use the following code:
