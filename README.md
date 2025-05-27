@@ -100,6 +100,11 @@ A full layout example which could be placed in `resources/views/layouts/app.blad
         </ul>
         <hr/>
         {{ $slot }}
+        <!--
+            This provides useful debugging information such as CMS version, application environment, and more.
+            It is especially helpful in production deployments to quickly identify configuration and environment details.
+        -->
+        <x-flyo::debug-info />
     </body>
 </html>
 ```
