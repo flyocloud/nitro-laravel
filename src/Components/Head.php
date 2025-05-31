@@ -51,7 +51,7 @@ class Head extends Component
         self::metaImage($entity->getEntity()->getEntityImage());
         self::jsonLd($entity->getJsonld());
 
-        if (Env::get('APP_ENV') === 'production') {
+        if (config('app.env') === 'production') {
             self::script("fetch('{$entity->getEntity()->getEntityMetric()->getApi()}')");
         }
     }
