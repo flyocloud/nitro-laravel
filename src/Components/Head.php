@@ -77,17 +77,17 @@ class Head extends Component
         }
 
         if (count(self::$scripts) > 0) {
-            $html .= '<script>';
+            $html .= '<script>@verbatim';
             foreach (self::$scripts as $script) {
                 $html .= $script.PHP_EOL;
             }
-            $html .= '</script>';
+            $html .= '@endverbatim</script>';
         }
 
         if (count(self::$jsonLd) > 0) {
-            $html .= '<script type="application/ld+json">';
+            $html .= '<script type="application/ld+json">@verbatim';
             $html .= json_encode(self::$jsonLd);
-            $html .= '</script>';
+            $html .= '@endverbatim</script>';
         }
 
         return $html;
