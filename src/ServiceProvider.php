@@ -102,8 +102,25 @@ class ServiceProvider extends SupportServiceProvider
             Log::debug('Flyo live edit is '.($isLiveEdit ? 'enabled' : 'disabled'));
 
             if ($isLiveEdit) {
-                Head::script('window.addEventListener("message",event=>{if(event.data?.action===\'pageRefresh\'){window.location.reload(true);}});');
-                Head::script('function getActualWindow(){return window===window.top?window:window.parent?window.parent:window;}function openBlockInFlyo(uid){getActualWindow().postMessage({action:\'openEdit\',data:JSON.parse(JSON.stringify({item:{uid:uid}}))},\'https://flyo.cloud\')}');
+                Head::script('<?php echo <<<JS
+                    window.addEventListener("message", event => {
+                        if (event.data?.action === "pageRefresh") {
+                            window.location.reload(true);
+                        }
+                    });
+                JS; ?>');
+
+                Head::script(<<<'JS'
+                    function getActualWindow() {
+                        return window === window.top ? window : window.parent ? window.parent : window;
+                    }
+                    function openBlockInFlyo(uid) {
+                        getActualWindow().postMessage({
+                            action: 'openEdit',
+                            data: JSON.parse(JSON.stringify({ item: { uid: uid } }))
+                        }, 'https://flyo.cloud');
+                    }
+                JS);
             }
 
             Route::get('/sitemap.xml', [SitemapController::class, 'render'])->middleware(CachingHeaders::class);
