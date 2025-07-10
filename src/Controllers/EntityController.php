@@ -67,6 +67,8 @@ class EntityController
         return $this->view->make($view, [
             'model' => $entity->getModel(),
             'entity' => $entity->getEntity(),
+            'translation' => $entity->getTranslation(),
+            'breadcrumb' => $entity->getBreadcrumb(),
         ]);
     }
 }

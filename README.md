@@ -157,6 +157,9 @@ And the example `tier.blade.php` in the `resources/views` folder:
 ```blade
 <?php
 /** @var \Flyo\Model\Entity $entity */
+/** @var \Flyo\Model\EntityInterface $model */
+/** @var \Flyo\Model\Translation[] $translation */
+/** @var \Flyo\Model\Breadcrumb[] $breadcrumb */
 ?>
 <x-layout>
     <h1><?= $entity->getModel()->image->source; ?></h1>
