@@ -210,8 +210,7 @@ Route::get('{locale}/ort/{slug}', function ($locale, $slug) {
 })->where('lang', '[a-z]{2}')->name('poi');
 ```
 
-
-## Misc
+## Misc
 
 In order to resolve the Configuration object somewhere in your application, you can use the following code:
 
