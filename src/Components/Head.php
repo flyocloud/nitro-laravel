@@ -6,7 +6,6 @@ use Flyo\Bridge\Image;
 use Flyo\Model\Entity;
 use Flyo\Model\Page as ModelPage;
 use Illuminate\Contracts\View\Factory;
-use Illuminate\Support\Env;
 use Illuminate\View\Component;
 
 class Head extends Component
