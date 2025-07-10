@@ -72,7 +72,8 @@ class ServiceProvider extends SupportServiceProvider
                     if (app('config')->get('flyo.live_edit', false)) {
                         \$block = {$expression};
                         if (!\$block instanceof ".Block::class.") {
-                            throw new \InvalidArgumentException('The argument passed to @editable must be an instance of Flyo\\Model\\Block.');
+                            \$actualType = is_object(\$block) ? get_class(\$block) : gettype(\$block);
+                            throw new \InvalidArgumentException('The argument passed to @editable must be an instance of Flyo\\Model\\Block, but received: ' . \$actualType);
                         }
                         \$uid = \$block->getUid();
                         echo ' onclick=\"openBlockInFlyo(\''.\$uid.'\')\" ';
