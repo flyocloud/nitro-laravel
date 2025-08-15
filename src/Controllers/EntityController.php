@@ -34,16 +34,38 @@ use Illuminate\Contracts\View\View;
  *   return app(EntityController::class)->resolve(fn(EntitiesApi $api, $param) => $api->entityByUniqueid($param, 117))->render($uid, 'event.detail');
  * });
  * ```
+ *
+ * with custom exception handling
+ *
+ * ```php
+ * Route::get('/event/{uid}', function($uid) {
+ *   return app(EntityController::class)
+ *       ->resolve(fn(EntitiesApi $api, $param) => $api->entityByUniqueid($param, 117))
+ *       ->onException(function($exception, $param, $view) {
+ *           // Custom exception handling
+ *           return response()->view('errors.custom', ['error' => $exception->getMessage()], 500);
+ *       })
+ *       ->render($uid, 'event.detail');
+ * });
+ * ```
  */
 class EntityController
 {
     public function __construct(protected Factory $view, protected Configuration $config) {}
 
     private $resolver;
+    private $exceptionHandler;
 
     public function resolve(callable $fn): self
     {
         $this->resolver = $fn;
+
+        return $this;
+    }
+
+    public function onException(callable $handler): self
+    {
+        $this->exceptionHandler = $handler;
 
         return $this;
     }
@@ -59,6 +81,10 @@ class EntityController
                 throw new Exception('The resolver must return an instance of Flyo\\Model\\Entity.');
             }
         } catch (\Exception $e) {
+            if ($this->exceptionHandler) {
+                return call_user_func($this->exceptionHandler, $e, $param, $view);
+            }
+            
             abort(404, $e->getMessage());
         }
 
