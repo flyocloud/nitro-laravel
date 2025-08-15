@@ -9,6 +9,7 @@ use Flyo\Laravel\Components\Head;
 use Flyo\Model\Entity;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 
 /**
  * Generic Entity Controller Handling.
@@ -70,7 +71,7 @@ class EntityController
         return $this;
     }
 
-    public function render($param, $view): View
+    public function render($param, $view): View|RedirectResponse
     {
         $api = new EntitiesApi(null, $this->config);
 
