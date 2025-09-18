@@ -55,6 +55,7 @@ class EntityController
     public function __construct(protected Factory $view, protected Configuration $config) {}
 
     private $resolver;
+
     private $exceptionHandler;
 
     public function resolve(callable $fn): self
@@ -85,7 +86,7 @@ class EntityController
             if ($this->exceptionHandler) {
                 return call_user_func($this->exceptionHandler, $e, $param, $view);
             }
-            
+
             abort(404, $e->getMessage());
         }
 
