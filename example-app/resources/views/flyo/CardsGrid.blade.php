@@ -1,7 +1,7 @@
 <?php
 /** @var \Flyo\Model\Block $block */
 ?>
-<div>
+<div @editable($block)>
     <?php foreach ($block->getItems() as $item): ?>
         <a href="<?= $item->link->routes->detail ?? '#notfound'; ?>">
             <h1><?= $item->title; ?></h1>

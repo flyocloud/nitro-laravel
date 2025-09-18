@@ -67,6 +67,10 @@ class ServiceProvider extends SupportServiceProvider
             });
             $viewFactory->share('config', $response);
 
+            /**
+             * @editable($block)
+             * Renders attributes for live-edit highlight wiring.
+             */
             Blade::directive('editable', function ($expression) {
                 return "<?php
                     if (app('config')->get('flyo.live_edit', false)) {
@@ -92,18 +96,51 @@ class ServiceProvider extends SupportServiceProvider
                         }
                         
                         \$uid = \$block->getUid();
-                        echo ' onclick=\"openBlockInFlyo(\''.\$uid.'\')\" ';
+                        echo ' class=\"flyo-preview-highlight\" data-flyo-uid=\"' . htmlspecialchars(\$uid, ENT_QUOTES, 'UTF-8') . '\" ';
                     }
                 ?>";
             });
 
             $isLiveEdit = $configRepository->get('flyo.live_edit', false);
-
             Log::debug('Flyo live edit is '.($isLiveEdit ? 'enabled' : 'disabled'));
 
             if ($isLiveEdit) {
-                Head::script('window.addEventListener("message",event=>{if(event.data?.action===\'pageRefresh\'){window.location.reload(true);}});');
-                Head::script('function getActualWindow(){return window===window.top?window:window.parent?window.parent:window;}function openBlockInFlyo(uid){getActualWindow().postMessage({action:\'openEdit\',data:JSON.parse(JSON.stringify({item:{uid:uid}}))},\'https://flyo.cloud\')}');
+                // Keep page-refresh support
+
+                // Load Nitro JS Bridge once and wire highlights once (no observers/polling needed)
+                Head::script(<<<'JS'
+(function(){
+  // Wire function: attach highlightAndClick to all markers
+  function wire(){
+    if (!window.nitroJsBridge || typeof window.nitroJsBridge.highlightAndClick !== 'function') return;
+
+    if (window.nitroJsBridge.reload) { window.nitroJsBridge.reload(); }
+    var nodes = document.querySelectorAll('.flyo-preview-highlight');
+    for (var i=0; i<nodes.length; i++){
+      var el = nodes[i];
+      var uid = el.getAttribute('data-flyo-uid');
+      if (uid) { window.nitroJsBridge.highlightAndClick(uid, el); }
+    }
+  }
+
+  // Inject the bridge (unpkg). Run wire() on load; also run once on DOM ready (no-op if bridge not ready yet).
+  function loadBridgeAndWire(){
+    var s = document.createElement('script');
+    s.src = 'https://unpkg.com/@flyo/nitro-js-bridge@1/dist/nitro-js-bridge.umd.cjs';
+    s.async = true;
+    s.onload = wire;
+    document.head.appendChild(s);
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', wire, { once: true });
+    } else {
+      wire();
+    }
+  }
+
+  loadBridgeAndWire();
+})();
+JS);
             }
 
             Route::get('/sitemap.xml', [SitemapController::class, 'render'])->middleware(CachingHeaders::class);
