@@ -96,7 +96,7 @@ class ServiceProvider extends SupportServiceProvider
                         }
                         
                         \$uid = \$block->getUid();
-                        echo ' class=\"flyo-preview-highlight\" data-flyo-uid=\"' . htmlspecialchars(\$uid, ENT_QUOTES, 'UTF-8') . '\" ';
+                        echo ' data-flyo-uid=\"' . htmlspecialchars(\$uid, ENT_QUOTES, 'UTF-8') . '\" ';
                     }
                 ?>";
             });
@@ -115,7 +115,7 @@ class ServiceProvider extends SupportServiceProvider
     if (!window.nitroJsBridge || typeof window.nitroJsBridge.highlightAndClick !== 'function') return;
 
     if (window.nitroJsBridge.reload) { window.nitroJsBridge.reload(); }
-    var nodes = document.querySelectorAll('.flyo-preview-highlight');
+    var nodes = document.querySelectorAll('[data-flyo-uid]');
     for (var i=0; i<nodes.length; i++){
       var el = nodes[i];
       var uid = el.getAttribute('data-flyo-uid');
