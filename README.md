@@ -39,7 +39,7 @@ print_r($block->getSlots());
 ?>
 ```
 
-To make the block editable (which means clicking in the block, will correctly add the block to the cms editor) you can use the following blade directive `@editable($block)`:
+To make the block editable you must place the Blade directive `@editable($block)` on the block's root HTML element. This ensures the Flyo editor can correctly detect the block and display the edit icon next to that element when the page is opened in the editor. In short: put `@editable($block)` on the outermost element of the block so clicking the icon opens this block for editing.
 
 ```blade
 <?php
@@ -47,7 +47,7 @@ To make the block editable (which means clicking in the block, will correctly ad
 ?>
 <div @editable($block) style="border:1px solid blue; padding:20px;">
     <?php print_r($block->getContent()); ?>
-<div>
+</div>
 ```
 
 ## Layout Variable
