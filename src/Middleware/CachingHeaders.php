@@ -29,6 +29,10 @@ class CachingHeaders
             if ($serverCacheTtl > 0) {
                 $response->header('Vercel-CDN-Cache-Control', 'max-age='.$serverCacheTtl);
                 $response->header('CDN-Cache-Control', 'max-age='.$serverCacheTtl);
+            } else {
+                // this disables caching on Vercel and other CDNs but if client caching is enabled below it will still apply
+                $response->header('Vercel-CDN-Cache-Control', 'no-store');
+                $response->header('CDN-Cache-Control', 'no-store');
             }
 
             $clientCacheTtl = $this->config->get('flyo.client_cache_ttl', 900);
