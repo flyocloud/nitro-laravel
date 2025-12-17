@@ -74,6 +74,19 @@ class Head extends Component
             $img = Image::source(self::$metas['image'], 1200, 630, 'jpg');
             $html .= '<meta property="og:image" content="'.$img.'">'.PHP_EOL;
             $html .= '<meta name="twitter:image" content="'.$img.'">'.PHP_EOL;
+            $html .= '<meta property="twitter:card" content="summary_large_image">'.PHP_EOL;
+        }
+
+        $appName = config('app.name', '');
+
+        if (! empty($appName)) {
+            $html .= '<meta property="og:site_name" content="'.$appName.'">'.PHP_EOL;
+        }
+
+        $currentAbsoluteUrl = url()->current();
+
+        if (! empty($currentAbsoluteUrl)) {
+            $html .= '<meta property="og:url" content="'.$currentAbsoluteUrl.'">'.PHP_EOL;
         }
 
         if (count(self::$scripts) > 0) {
