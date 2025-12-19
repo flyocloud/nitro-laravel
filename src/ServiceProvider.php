@@ -105,6 +105,12 @@ class ServiceProvider extends SupportServiceProvider
             $isLiveEdit = $configRepository->get('flyo.live_edit', false);
             Log::debug('Flyo live edit is '.($isLiveEdit ? 'enabled' : 'disabled'));
 
+            // Apply CSP frame-ancestors only when live edit is enabled
+            $flyoMiddlewares = [CachingHeaders::class];
+            if ($isLiveEdit) {
+                $flyoMiddlewares[] = CspFrameAncestors::class;
+            }
+
             if ($isLiveEdit) {
                 // Keep page-refresh support
 
@@ -144,9 +150,9 @@ class ServiceProvider extends SupportServiceProvider
 JS);
             }
 
-            Route::get('/sitemap.xml', [SitemapController::class, 'render'])->middleware([CachingHeaders::class]);
+            Route::get('/sitemap.xml', [SitemapController::class, 'render'])->middleware($flyoMiddlewares);
 
-            Route::middleware('web')->group(function () use ($response, $config, $viewFactory) {
+            Route::middleware('web')->group(function () use ($response, $config, $viewFactory, $flyoMiddlewares) {
                 foreach ($response->getPages() as $page) {
                     Route::get($page, function () use ($page, $config, $viewFactory) {
                         $pageResponse = (new PagesApi(null, $config))->page($page, App::getLocale());
@@ -160,7 +166,7 @@ JS);
                         Head::metaImage($pageResponse->getMetaJson()->getImage());
 
                         return $viewFactory->make('cms', ['page' => $pageResponse]);
-                    })->middleware([CachingHeaders::class, CspFrameAncestors::class]);
+                    })->middleware($flyoMiddlewares);
                 }
             });
         }
