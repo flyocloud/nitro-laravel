@@ -8,7 +8,6 @@ use Flyo\Configuration;
 use Flyo\Laravel\Components\Head;
 use Flyo\Laravel\Controllers\SitemapController;
 use Flyo\Laravel\Middleware\CachingHeaders;
-use Flyo\Laravel\Middleware\CspFrameAncestors;
 use Flyo\Model\Block;
 use Flyo\Model\ConfigResponse;
 use Flyo\Model\Page;
@@ -144,7 +143,7 @@ class ServiceProvider extends SupportServiceProvider
 JS);
             }
 
-            Route::get('/sitemap.xml', [SitemapController::class, 'render'])->middleware([CachingHeaders::class]);
+            Route::get('/sitemap.xml', [SitemapController::class, 'render'])->middleware(CachingHeaders::class);
 
             Route::middleware('web')->group(function () use ($response, $config, $viewFactory) {
                 foreach ($response->getPages() as $page) {
@@ -160,7 +159,7 @@ JS);
                         Head::metaImage($pageResponse->getMetaJson()->getImage());
 
                         return $viewFactory->make('cms', ['page' => $pageResponse]);
-                    })->middleware([CachingHeaders::class, CspFrameAncestors::class]);
+                    })->middleware(CachingHeaders::class);
                 }
             });
         }
