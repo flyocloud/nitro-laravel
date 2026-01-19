@@ -1,8 +1,10 @@
 <?php
 /** @var \Flyo\Model\Block $block */
-$slotContainerFooBarName = $block->getSlots()['slotcontainername'];
+$slotContainerContent = $block->getSlots()['content'] ?? null;
 ?>
-<div style="background-color: red;">
-    <h1>Slot Container</h1>
-    <x-flyo::slot :container=$slotContainerFooBarName />
+<div style="border:1px solid #000; margin:20px; padding:20px; border-radius:15px;">
+    <div style="font-weight:bold; margin-bottom:10px;">Slot Container:</div>
+    @if($slotContainerContent)
+    <x-flyo::slot :container=$slotContainerContent />
+    @endif
 </div>

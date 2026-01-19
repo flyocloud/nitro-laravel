@@ -15,7 +15,8 @@
         }
     ],
     "require": {
-        "flyo/nitro-php" : "^1.1",
+        "php": "^8.3",
+        "flyo/nitro-php": "^2.0",
         "laravel/framework": "^11|^12",
         "flyo/nitro-php-bridge": "^1.2"
     },
