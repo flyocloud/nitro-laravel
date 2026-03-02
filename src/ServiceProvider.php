@@ -32,11 +32,10 @@ class ServiceProvider extends SupportServiceProvider
 
     public function boot(ViewFactory $viewFactory, ConfigRepository $configRepository): void
     {
+        $this->loadViewsFrom(__DIR__.'/../resources/views', $configRepository->get('flyo.views_namespace', 'flyo'));
+        Blade::componentNamespace('Flyo\\Laravel\\Components', 'flyo');
+
         if (! $this->app->runningInConsole()) {
-
-            $this->loadViewsFrom(__DIR__.'/../resources/views', $configRepository->get('flyo.views_namespace', 'flyo'));
-            Blade::componentNamespace('Flyo\\Laravel\\Components', 'flyo');
-
             $locales = $configRepository->get('flyo.locales', []);
             if (! empty($locales) && count($locales) > 1) {
                 $request = request();
