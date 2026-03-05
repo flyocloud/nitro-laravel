@@ -113,7 +113,14 @@ class ServiceProvider extends SupportServiceProvider
   function wire(){
     if (!window.nitroJsBridge || typeof window.nitroJsBridge.highlightAndClick !== 'function') return;
 
-    if (window.nitroJsBridge.reload) { window.nitroJsBridge.reload(); }
+    if (window.nitroJsBridge.reload) {
+        window.nitroJsBridge.reload();
+    }
+
+    if (window.nitroJsBridge.scrollTo) {
+        window.nitroJsBridge.scrollTo();
+    }
+    
     var nodes = document.querySelectorAll('[data-flyo-uid]');
     for (var i=0; i<nodes.length; i++){
       var el = nodes[i];
