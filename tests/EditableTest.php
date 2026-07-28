@@ -6,6 +6,7 @@ use Flyo\Laravel\Editable;
 use Flyo\Model\Block;
 use Illuminate\Support\Facades\Blade;
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use stdClass;
 
 class EditableTest extends TestCase
@@ -54,7 +55,7 @@ class EditableTest extends TestCase
     /**
      * @param  mixed  $value
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('invalidBlockProvider')]
+    #[DataProvider('invalidBlockProvider')]
     public function test_invalid_blocks_throw($value, string $expectedType): void
     {
         $this->expectException(InvalidArgumentException::class);

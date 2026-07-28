@@ -82,7 +82,7 @@ class EntityController
             if (! $entity instanceof Entity) {
                 throw new Exception('The resolver must return an instance of Flyo\\Model\\Entity.');
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             if ($this->exceptionHandler) {
                 return call_user_func($this->exceptionHandler, $e, $param, $view);
             }
