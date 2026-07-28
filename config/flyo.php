@@ -9,6 +9,11 @@ return [
     // The default setting false represents the application to be in production mode.
     'live_edit' => env('FLYO_LIVE_EDIT', false),
 
+    // The url of the nitro js bridge (UMD build) which is loaded when live_edit is enabled.
+    // The default is pinned to the major version on the CDN, so bridge updates are picked up
+    // automatically. Change it to self host the bridge or to pin an exact version.
+    'live_edit_bridge_url' => env('FLYO_LIVE_EDIT_BRIDGE_URL', Flyo\Laravel\LiveEdit::BRIDGE_URL),
+
     // The namespace for the views, which means the views will be stored in resources/views/flyo.
     'views_namespace' => 'flyo',
 

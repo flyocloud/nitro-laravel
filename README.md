@@ -50,6 +50,33 @@ To make the block editable you must place the Blade directive `@editable($block)
 </div>
 ```
 
+In raw php templates, or anywhere else the blade directive is not available (a controller, a string you build yourself), use the `Flyo\Laravel\Editable` helper the directive delegates to:
+
+```php
+<section <?= Flyo\Laravel\Editable::attr($block); ?>>
+    <?php print_r($block->getContent()); ?>
+</section>
+```
+
+`Editable::attr($block)` returns the escaped `data-flyo-uid="..."` attribute, or an empty string when live edit is disabled. `Editable::uid($block)` gives you the raw uid, `Editable::isEnabled()` the live edit state. The marker alone is not enough though: the javascript which makes it interactive is loaded by the `<x-flyo::head />` component, so your layout has to include it.
+
+## Live Edit
+
+With `live_edit` enabled in `config/flyo.php`, the `<x-flyo::head />` component loads the [nitro js bridge](https://github.com/flyocloud/nitro-js-bridge) from the CDN and wires everything the Flyo editor needs when the site is displayed inside the editor preview iframe:
+
+- **Page refresh**: the editor can reload the preview after a change.
+- **Editor handshake**: the preview announces itself, so the editor can show troubleshooting hints instead of a silent white screen when the preview is blocked or points at a build without live edit.
+- **Scroll to block**: selecting a block in the editor scrolls the preview to it.
+- **Click to edit**: hovering a block rendered with `@editable($block)` fades in a highlight ring plus a pencil button which opens that block in the editor.
+
+The hover affordance appears after roughly half a second of hovering (hover intent, so it does not flicker while the mouse crosses the page) and is drawn in a single overlay element outside of `<body>`. It never adds styles, classes, attributes or listeners to your markup, does not affect layout or scrolling, and is invisible outside of the editor preview — on the live site nothing of it is loaded at all, since `live_edit` is disabled there.
+
+The bridge url is pinned to the major version, so bridge releases are picked up automatically. To self host it or to pin an exact version, set the url in `config/flyo.php`:
+
+```php
+'live_edit_bridge_url' => env('FLYO_LIVE_EDIT_BRIDGE_URL', 'https://unpkg.com/@flyo/nitro-js-bridge@1.5.0/dist/nitro-js-bridge.umd.cjs'),
+```
+
 ## Layout Variable
 
 In order to build menus, the `$config` response from the api is a global available variable, for example this could be used in layout-components:
@@ -245,7 +272,20 @@ $page = app(Flyo\Model\Page::class);
 
 [Read More in the Docs](https://dev.flyo.cloud/nitro/php)
 
+## Upgrading
+
+See [UPGRADE.md](UPGRADE.md) for what changed between versions.
+
 ## Package Development
 
 1. Check the `example-app/.env` file to have a correct flyo token. 
 2. Go to example-app and run `php artisan serve` to get the example app running.
+
+Run the checks the CI runs:
+
+```sh
+composer pint      # code style
+composer phpunit   # tests
+composer test      # both
+vendor/bin/phpstan analyse
+```
