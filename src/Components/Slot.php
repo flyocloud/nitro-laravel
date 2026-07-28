@@ -4,8 +4,8 @@ namespace Flyo\Laravel\Components;
 
 use Flyo\Model\BlockSlotValue;
 use Illuminate\Contracts\View\Factory;
+use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
-use Illuminate\View\View;
 
 class Slot extends Component
 {

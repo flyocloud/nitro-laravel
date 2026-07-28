@@ -8,7 +8,6 @@ use Flyo\Configuration;
 use Flyo\Laravel\Components\Head;
 use Flyo\Laravel\Controllers\SitemapController;
 use Flyo\Laravel\Middleware\CachingHeaders;
-use Flyo\Model\Block;
 use Flyo\Model\ConfigResponse;
 use Flyo\Model\Page;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
@@ -34,6 +33,17 @@ class ServiceProvider extends SupportServiceProvider
     {
         $this->loadViewsFrom(__DIR__.'/../resources/views', $configRepository->get('flyo.views_namespace', 'flyo'));
         Blade::componentNamespace('Flyo\\Laravel\\Components', 'flyo');
+
+        /**
+         * @editable($block)
+         * Renders the `data-flyo-uid` marker for live-edit highlight wiring, see Editable.
+         *
+         * Registered in console contexts as well, otherwise `artisan view:cache` would not be able
+         * to compile templates using the directive.
+         */
+        Blade::directive('editable', function ($expression) {
+            return '<?php echo '.Editable::class."::attr({$expression}); ?>";
+        });
 
         if (! $this->app->runningInConsole()) {
             $locales = $configRepository->get('flyo.locales', []);
@@ -66,88 +76,12 @@ class ServiceProvider extends SupportServiceProvider
             });
             $viewFactory->share('config', $response);
 
-            /**
-             * @editable($block)
-             * Renders attributes for live-edit highlight wiring.
-             */
-            Blade::directive('editable', function ($expression) {
-                return "<?php
-                    if (app('config')->get('flyo.live_edit', false)) {
-                        \$block = {$expression};
-                        \$isValidBlock = false;
-                        
-                        // Try instanceof first (preferred method)
-                        if (\$block instanceof ".Block::class.") {
-                            \$isValidBlock = true;
-                        }
-                        // Fallback: check exact class name (handles class loading issues)
-                        elseif (is_object(\$block) && get_class(\$block) === 'Flyo\\Model\\Block') {
-                            \$isValidBlock = true;
-                        }
-                        // Final fallback: duck typing (has required method)
-                        elseif (is_object(\$block) && method_exists(\$block, 'getUid')) {
-                            \$isValidBlock = true;
-                        }
-                        
-                        if (!\$isValidBlock) {
-                            \$actualType = is_object(\$block) ? get_class(\$block) : gettype(\$block);
-                            throw new \InvalidArgumentException('The argument passed to @editable must be a Flyo Block object. Received: ' . \$actualType);
-                        }
-                        
-                        \$uid = \$block->getUid();
-                        echo ' data-flyo-uid=\"' . htmlspecialchars(\$uid, ENT_QUOTES, 'UTF-8') . '\" ';
-                    }
-                ?>";
-            });
-
             $isLiveEdit = $configRepository->get('flyo.live_edit', false);
             Log::debug('Flyo live edit is '.($isLiveEdit ? 'enabled' : 'disabled'));
 
-            if ($isLiveEdit) {
-                // Keep page-refresh support
-
-                // Load Nitro JS Bridge once and wire highlights once (no observers/polling needed)
-                Head::script(<<<'JS'
-(function(){
-  // Wire function: attach highlightAndClick to all markers
-  function wire(){
-    if (!window.nitroJsBridge || typeof window.nitroJsBridge.highlightAndClick !== 'function') return;
-
-    if (window.nitroJsBridge.reload) {
-        window.nitroJsBridge.reload();
-    }
-
-    if (window.nitroJsBridge.scrollTo) {
-        window.nitroJsBridge.scrollTo();
-    }
-    
-    var nodes = document.querySelectorAll('[data-flyo-uid]');
-    for (var i=0; i<nodes.length; i++){
-      var el = nodes[i];
-      var uid = el.getAttribute('data-flyo-uid');
-      if (uid) { window.nitroJsBridge.highlightAndClick(uid, el); }
-    }
-  }
-
-  // Inject the bridge (unpkg). Run wire() on load; also run once on DOM ready (no-op if bridge not ready yet).
-  function loadBridgeAndWire(){
-    var s = document.createElement('script');
-    s.src = 'https://unpkg.com/@flyo/nitro-js-bridge@1/dist/nitro-js-bridge.umd.cjs';
-    s.async = true;
-    s.onload = wire;
-    document.head.appendChild(s);
-
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', wire, { once: true });
-    } else {
-      wire();
-    }
-  }
-
-  loadBridgeAndWire();
-})();
-JS);
-            }
+            // Loads the nitro js bridge and wires page refresh, scroll to block, the editor
+            // connection handshake and the click-to-edit hover overlay, see LiveEdit.
+            LiveEdit::boot($configRepository);
 
             Route::get('/sitemap.xml', [SitemapController::class, 'render'])->middleware(CachingHeaders::class);
 

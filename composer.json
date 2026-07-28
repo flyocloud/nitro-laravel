@@ -8,6 +8,11 @@
             "Flyo\\Laravel\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Flyo\\Laravel\\Tests\\": "tests/"
+        }
+    },
     "authors": [
         {
             "name": "Basil Suter",
@@ -29,9 +34,15 @@
     },
     "require-dev": {
         "larastan/larastan": "^3.0",
-        "laravel/pint": "^1.17"
+        "laravel/pint": "^1.17",
+        "orchestra/testbench": "^9.0|^10.0"
     },
     "scripts": {
-        "pint": "./vendor/bin/pint"
+        "pint": "./vendor/bin/pint",
+        "phpunit": "./vendor/bin/phpunit",
+        "test": [
+            "@pint",
+            "@phpunit"
+        ]
     }
 }

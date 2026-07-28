@@ -1,5 +1,7 @@
 <?php
 
+use Flyo\Laravel\LiveEdit;
+
 return [
     // The token to authenticate the application with the Flyo API.
     // The production token can be set here, if there is no token set in the .env file, the production token will be used.
@@ -8,6 +10,11 @@ return [
     // If enabled, the user can interact with the components, also it represents the application to be in development mode.
     // The default setting false represents the application to be in production mode.
     'live_edit' => env('FLYO_LIVE_EDIT', false),
+
+    // The url of the nitro js bridge (UMD build) which is loaded when live_edit is enabled.
+    // The default is pinned to the major version on the CDN, so bridge updates are picked up
+    // automatically. Change it to self host the bridge or to pin an exact version.
+    'live_edit_bridge_url' => env('FLYO_LIVE_EDIT_BRIDGE_URL', LiveEdit::BRIDGE_URL),
 
     // The namespace for the views, which means the views will be stored in resources/views/flyo.
     'views_namespace' => 'flyo',

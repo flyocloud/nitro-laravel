@@ -20,7 +20,7 @@ class CachingHeaders
         $isDebug = Env::get('APP_DEBUG');
 
         if ($isDebug) {
-            $response->headers->set('Flyo-Live-Edit', $isLiveEdit ? 1 : 0);
+            $response->headers->set('Flyo-Live-Edit', $isLiveEdit ? '1' : '0');
         }
 
         if ($response->isSuccessful() && ! $isDebug && ! $isLiveEdit) {
