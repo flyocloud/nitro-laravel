@@ -50,7 +50,7 @@ To make the block editable you must place the Blade directive `@editable($block)
 </div>
 ```
 
-In raw php templates, or anywhere else the blade directive is not available (a controller, a string you build yourself), use the `Flyo\Laravel\Editable` helper the directive delegates to:
+In raw php templates, or anywhere else the blade directive is not available (a controller, a string you build yourself), use `Flyo\Laravel\Editable` instead:
 
 ```php
 <section <?= Flyo\Laravel\Editable::attr($block); ?>>
@@ -69,7 +69,7 @@ With `live_edit` enabled in `config/flyo.php`, the `<x-flyo::head />` component 
 - **Scroll to block**: selecting a block in the editor scrolls the preview to it.
 - **Click to edit**: hovering a block rendered with `@editable($block)` fades in a highlight ring plus a pencil button which opens that block in the editor.
 
-The hover affordance appears after roughly half a second of hovering (hover intent, so it does not flicker while the mouse crosses the page) and is drawn in a single overlay element outside of `<body>`. It never adds styles, classes, attributes or listeners to your markup, does not affect layout or scrolling, and is invisible outside of the editor preview — on the live site nothing of it is loaded at all, since `live_edit` is disabled there.
+The hover affordance appears after roughly half a second of hovering, so it does not flicker while the mouse crosses the page. It is drawn in a single overlay element outside of your markup: no styles, classes, attributes or listeners are added to your elements and layout and scrolling are untouched. On the live site nothing of it is loaded at all, since `live_edit` is disabled there.
 
 The bridge url is pinned to the major version, so bridge releases are picked up automatically. To self host it or to pin an exact version, set the url in `config/flyo.php`:
 
