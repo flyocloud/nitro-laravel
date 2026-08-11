@@ -4,6 +4,7 @@ namespace Flyo\Laravel;
 
 use Flyo\Api\ConfigApi;
 use Flyo\Api\PagesApi;
+use Flyo\Api\SitemapApi;
 use Flyo\Configuration;
 use Flyo\Laravel\Components\Head;
 use Flyo\Laravel\Controllers\SitemapController;
@@ -67,6 +68,10 @@ class ServiceProvider extends SupportServiceProvider
 
             $this->app->singleton(Configuration::class, function () use ($config) {
                 return $config;
+            });
+
+            $this->app->singleton(SitemapApi::class, function () use ($config) {
+                return new SitemapApi(null, $config);
             });
 
             $response = (new ConfigApi(null, $config))->config(App::getLocale());
