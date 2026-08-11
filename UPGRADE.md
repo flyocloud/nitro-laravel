@@ -2,7 +2,7 @@
 
 ## 2.1 → 2.2
 
-**No breaking changes.** `composer update flyo/nitro-laravel` is enough, no code changes are required in a project.
+**No breaking changes.** `composer update flyo/nitro-laravel` is enough, no code changes are required in a project. It pulls `flyo/nitro-php` 2.2, which is the sdk release exposing the sitemap fields used below.
 
 ### What's new
 
@@ -36,7 +36,7 @@
    <url><loc>https://example.com/news/a-news</loc><lastmod>2025-08-12T14:40:00+00:00</lastmod></url>
    ```
 
-   The timestamp reflects the last time the delivered content of that page or entity actually changed, a rebuild producing identical output does not move it. It requires a `flyo/nitro-php` release generated against the current api schema, older versions of the sdk drop the field and the entries are written without `lastmod` as before.
+   The timestamp reflects the last time the delivered content of that page or entity actually changed, a rebuild producing identical output does not move it. Items the api sends without a timestamp are written without `lastmod`.
 
 5. **The sitemap links the `href` delivered by the api.** Every sitemap item carries the resolved url path of the page or entity, it is used instead of rebuilding the url from `entity_slug` and the `default_route` route.
 

@@ -11,22 +11,6 @@ use Illuminate\Http\Response;
 class SitemapTest extends TestCase
 {
     /**
-     * @param  array<string, mixed>  $data
-     */
-    private function item(array $data): EntityinterfaceInner
-    {
-        $item = new EntityinterfaceInner($data);
-
-        // the generated model drops properties it does not know yet, updated_at is only part of it
-        // once flyo/nitro-php has been regenerated, so it is written into the container directly
-        if (isset($data['updated_at'])) {
-            $item['updated_at'] = $data['updated_at'];
-        }
-
-        return $item;
-    }
-
-    /**
      * @param  array<int, EntityinterfaceInner>  $items
      */
     private function render(array $items): string
@@ -42,8 +26,8 @@ class SitemapTest extends TestCase
     public function test_the_href_of_an_item_is_used_as_absolute_loc(): void
     {
         $xml = $this->render([
-            $this->item(['entity_type' => 'nitro-page', 'entity_slug' => 'about', 'href' => '/about']),
-            $this->item(['entity_type' => 'news', 'entity_slug' => 'a-news', 'href' => '/de/news/a-news']),
+            new EntityinterfaceInner(['entity_type' => 'nitro-page', 'entity_slug' => 'about', 'href' => '/about']),
+            new EntityinterfaceInner(['entity_type' => 'news', 'entity_slug' => 'a-news', 'href' => '/de/news/a-news']),
         ]);
 
         $this->assertStringContainsString('<url><loc>https://example.com/about</loc></url>', $xml);
@@ -53,7 +37,7 @@ class SitemapTest extends TestCase
     public function test_the_updated_at_timestamp_is_rendered_as_lastmod(): void
     {
         $xml = $this->render([
-            $this->item(['href' => '/about', 'updated_at' => 1755000000]),
+            new EntityinterfaceInner(['href' => '/about', 'updated_at' => 1755000000]),
         ]);
 
         $this->assertStringContainsString('<loc>https://example.com/about</loc><lastmod>'.gmdate(DATE_W3C, 1755000000).'</lastmod>', $xml);
@@ -62,8 +46,8 @@ class SitemapTest extends TestCase
     public function test_an_item_without_updated_at_is_rendered_without_lastmod(): void
     {
         $xml = $this->render([
-            $this->item(['href' => '/about']),
-            $this->item(['href' => '/contact', 'updated_at' => 0]),
+            new EntityinterfaceInner(['href' => '/about']),
+            new EntityinterfaceInner(['href' => '/contact', 'updated_at' => 0]),
         ]);
 
         $this->assertStringNotContainsString('lastmod', $xml);
@@ -72,8 +56,8 @@ class SitemapTest extends TestCase
     public function test_items_without_a_resolved_href_are_skipped(): void
     {
         $xml = $this->render([
-            $this->item(['entity_slug' => 'not-routed', 'routes' => ['_empty' => 'true']]),
-            $this->item(['href' => '', 'entity_slug' => 'also-not-routed']),
+            new EntityinterfaceInner(['entity_slug' => 'not-routed']),
+            new EntityinterfaceInner(['href' => '', 'entity_slug' => 'also-not-routed']),
         ]);
 
         $this->assertStringNotContainsString('<url>', $xml);
@@ -83,8 +67,8 @@ class SitemapTest extends TestCase
     public function test_the_same_location_is_only_listed_once(): void
     {
         $xml = $this->render([
-            $this->item(['href' => '/about', 'updated_at' => 1755000000]),
-            $this->item(['href' => '/about', 'updated_at' => 1755000001]),
+            new EntityinterfaceInner(['href' => '/about', 'updated_at' => 1755000000]),
+            new EntityinterfaceInner(['href' => '/about', 'updated_at' => 1755000001]),
         ]);
 
         $this->assertSame(1, substr_count($xml, '<loc>https://example.com/about</loc>'));
@@ -93,7 +77,7 @@ class SitemapTest extends TestCase
     public function test_the_response_is_a_valid_xml_urlset(): void
     {
         $xml = $this->render([
-            $this->item(['href' => '/foo?a=1&b=2', 'updated_at' => 1755000000]),
+            new EntityinterfaceInner(['href' => '/foo?a=1&b=2', 'updated_at' => 1755000000]),
         ]);
 
         $this->assertStringStartsWith('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">', $xml);

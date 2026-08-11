@@ -17,15 +17,12 @@ class SitemapController
     }
 
     /**
-     * The `updated_at` unix timestamp of a sitemap item as `lastmod` value.
-     *
-     * The timestamp is read through the array access of the generated model instead of a getter,
-     * because `getUpdatedAt()` only exists once flyo/nitro-php has been regenerated against the
-     * current openapi schema. Until then the key is absent and the entry is written without lastmod.
+     * The `updated_at` unix timestamp of a sitemap item as `lastmod` value, null when the api did
+     * not deliver a timestamp for the item.
      */
     private function lastmod(EntityinterfaceInner $item): ?string
     {
-        $updatedAt = (int) $item['updated_at'];
+        $updatedAt = (int) $item->getUpdatedAt();
 
         return $updatedAt > 0 ? gmdate(DATE_W3C, $updatedAt) : null;
     }
