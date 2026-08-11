@@ -31,6 +31,7 @@ return [
 
     // The default route to be used for the detail pages.
     // Routes/Links can be defined in the Flyo interface for each corresponding entity, the default name is 'detail'.
+    // Not used by the package itself, the sitemap uses the url the API resolved for an entity.
     'default_route' => env('FLYO_DEFAULT_ROUTE', 'detail'),
 
     // The list of supported locales as defined in the Flyo interface.
