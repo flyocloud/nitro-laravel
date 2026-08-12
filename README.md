@@ -101,6 +101,8 @@ Make sure to include the `<x-flyo::head>` component in the head of your layout f
 
 This will add needed javascript for reloading and editin blocks in local environments and also assign all available meta informations.
 
+The meta informations are taken from the api response of the current page (or entity when using the `EntityController`), which includes the title, description, image and the schema.org json-ld object rendered as an `application/ld+json` script.
+
 A full layout example which could be placed in `resources/views/layouts/app.blade.php`:
 
 ```blade
