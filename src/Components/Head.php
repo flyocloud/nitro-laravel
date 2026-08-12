@@ -4,6 +4,7 @@ namespace Flyo\Laravel\Components;
 
 use Flyo\Bridge\Image;
 use Flyo\Model\Entity;
+use Flyo\Model\Page as PageModel;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\View\Component;
 
@@ -32,14 +33,38 @@ class Head extends Component
         self::$metas['image'] = $image;
     }
 
-    public static function jsonLd(array|object $jsonLd)
+    public static function jsonLd(array|object|null $jsonLd)
     {
-        self::$jsonLd = (array) $jsonLd;
+        self::$jsonLd = $jsonLd === null ? [] : (array) $jsonLd;
     }
 
     public static function script(string $script)
     {
         self::$scripts[] = $script;
+    }
+
+    /**
+     * Assigns the meta informations and the schema.org json-ld object of a page response.
+     */
+    public static function metaPage(PageModel $page)
+    {
+        $meta = $page->getMetaJson();
+
+        if ($meta !== null) {
+            if (($title = self::stringOrNull($meta->getTitle())) !== null) {
+                self::metaTitle($title);
+            }
+
+            if (($description = self::stringOrNull($meta->getDescription())) !== null) {
+                self::metaDescription($description);
+            }
+
+            if (($image = self::stringOrNull($meta->getImage())) !== null) {
+                self::metaImage($image);
+            }
+        }
+
+        self::jsonLd($page->getJsonld());
     }
 
     public static function metaEntity(Entity $entity)
@@ -52,6 +77,22 @@ class Head extends Component
         if (config('app.env') === 'production') {
             self::script("fetch('{$entity->getEntity()->getEntityMetric()->getApi()}')");
         }
+    }
+
+    /**
+     * Normalizes an api response value into a usable meta string.
+     *
+     * Values of the api response are optional and therefore nullable, some of them are typed as
+     * models without properties by the php sdk (like the meta image), those must not end up in the
+     * head as their json encoded representation.
+     */
+    private static function stringOrNull(mixed $value): ?string
+    {
+        if (! is_string($value) || $value === '') {
+            return null;
+        }
+
+        return $value;
     }
 
     public function render(): string

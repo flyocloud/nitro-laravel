@@ -99,9 +99,7 @@ class ServiceProvider extends SupportServiceProvider
                             return $pageResponse;
                         });
 
-                        Head::metaTitle($pageResponse->getMetaJson()->getTitle());
-                        Head::metaDescription($pageResponse->getMetaJson()->getDescription());
-                        Head::metaImage($pageResponse->getMetaJson()->getImage());
+                        Head::metaPage($pageResponse);
 
                         return $viewFactory->make('cms', ['page' => $pageResponse]);
                     })->middleware(CachingHeaders::class);
