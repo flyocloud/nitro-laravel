@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "b2ea8b602c71b4935af65bb3f163d8e9",
+    "content-hash": "565e7b79b60b4b1ad26cdbeae39e3963",
     "packages": [
         {
             "name": "brick/math",
@@ -510,16 +510,16 @@
         },
         {
             "name": "flyo/nitro-php",
-            "version": "2.2",
+            "version": "2.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/flyocloud/nitro-php-sdk.git",
-                "reference": "2257fee63b4756220ef73bf90872ec4a68b2ffb2"
+                "reference": "18325f3ea9c3fa7f8e102be23ac89b78d1d2f2d0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/flyocloud/nitro-php-sdk/zipball/2257fee63b4756220ef73bf90872ec4a68b2ffb2",
-                "reference": "2257fee63b4756220ef73bf90872ec4a68b2ffb2",
+                "url": "https://api.github.com/repos/flyocloud/nitro-php-sdk/zipball/18325f3ea9c3fa7f8e102be23ac89b78d1d2f2d0",
+                "reference": "18325f3ea9c3fa7f8e102be23ac89b78d1d2f2d0",
                 "shasum": ""
             },
             "require": {
@@ -553,9 +553,9 @@
             ],
             "support": {
                 "issues": "https://github.com/flyocloud/nitro-php-sdk/issues",
-                "source": "https://github.com/flyocloud/nitro-php-sdk/tree/2.2"
+                "source": "https://github.com/flyocloud/nitro-php-sdk/tree/2.3"
             },
-            "time": "2026-08-11T18:39:55+00:00"
+            "time": "2026-08-18T09:10:32+00:00"
         },
         {
             "name": "flyo/nitro-php-bridge",
