@@ -23,6 +23,7 @@ class EntityRoutesTest extends TestCase
         return [
             'detail entity' => ['\Flyo\Model\EntityInterface'],
             'list item' => ['\Flyo\Model\EntityinterfaceInner'],
+            'sitemap item' => ['\Flyo\Model\SitemapinterfaceInner'],
         ];
     }
 

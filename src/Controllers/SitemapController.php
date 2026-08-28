@@ -3,10 +3,17 @@
 namespace Flyo\Laravel\Controllers;
 
 use Flyo\Api\SitemapApi;
-use Flyo\Model\EntityinterfaceInner;
+use Flyo\Model\SitemapinterfaceInner;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
+/**
+ * Renders the `sitemap.xml` of the integration.
+ *
+ * The api delivers its own model for sitemap items since flyo/nitro-php 3.0, it carries only what
+ * a sitemap needs: the url the api resolved for the item, the timestamp of the last change of its
+ * delivered content and the unique id of the entity behind it.
+ */
 class SitemapController
 {
     public function __construct(protected Response $response, protected Request $request, protected SitemapApi $api) {}
@@ -20,7 +27,7 @@ class SitemapController
      * The `updated_at` unix timestamp of a sitemap item as `lastmod` value, null when the api did
      * not deliver a timestamp for the item.
      */
-    private function lastmod(EntityinterfaceInner $item): ?string
+    private function lastmod(SitemapinterfaceInner $item): ?string
     {
         $updatedAt = (int) $item->getUpdatedAt();
 

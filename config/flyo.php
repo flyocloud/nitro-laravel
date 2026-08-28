@@ -27,6 +27,8 @@ return [
     // The TTL for client-side cache headers, in seconds.
     // Default is 1200 seconds (20 minutes) its only availble if the liveEdit is disabled. Use 0 to disable client caching.
     // will set Cache-Control header
+    // Both TTLs are ignored for a response rendered from a draft link, such a response is never
+    // cached, neither by the client nor by a CDN, see Flyo\Laravel\DraftMode.
     'client_cache_ttl' => env('FLYO_CLIENT_CACHE_TTL', 1200),
 
     // The default route to be used for the detail pages.

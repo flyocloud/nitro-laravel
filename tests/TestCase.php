@@ -3,6 +3,7 @@
 namespace Flyo\Laravel\Tests;
 
 use Flyo\Laravel\Components\Head;
+use Flyo\Laravel\DraftMode;
 use Flyo\Laravel\ServiceProvider;
 use Orchestra\Testbench\TestCase as BaseTestCase;
 
@@ -16,6 +17,9 @@ abstract class TestCase extends BaseTestCase
         Head::$scripts = [];
         Head::$metas = [];
         Head::$jsonLd = [];
+
+        // the draft state belongs to a single response, see DraftMode
+        DraftMode::reset();
     }
 
     protected function getPackageProviders($app): array

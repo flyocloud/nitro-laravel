@@ -9,6 +9,7 @@ use Flyo\Configuration;
 use Flyo\Laravel\Components\Head;
 use Flyo\Laravel\Controllers\SitemapController;
 use Flyo\Laravel\Middleware\CachingHeaders;
+use Flyo\Laravel\Middleware\PreventDraftCaching;
 use Flyo\Model\ConfigResponse;
 use Flyo\Model\Page;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
@@ -87,6 +88,10 @@ class ServiceProvider extends SupportServiceProvider
             // Loads the nitro js bridge and wires page refresh, scroll to block, the editor
             // connection handshake and the click-to-edit hover overlay, see LiveEdit.
             LiveEdit::boot($configRepository);
+
+            // A response rendered from a draft link must never be cached, wherever the route which
+            // rendered it lives, therefore the middleware is registered globally, see DraftMode.
+            PreventDraftCaching::register($this->app);
 
             Route::get('/sitemap.xml', [SitemapController::class, 'render'])->middleware(CachingHeaders::class);
 
