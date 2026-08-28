@@ -216,6 +216,88 @@ where the `poi.blade.php` file in the `resources/views` folder could look like t
 </x-layout>
 ```
 
+## Draft Links
+
+A draft link is a shareable, expiring snapshot of an entity which is still offline in Flyo. It is
+requested through the regular entity endpoints, with a **draft token** in place of the slug or the
+unique id, and the api answers with `is_draft` set and a `draft_expires_at` timestamp:
+
+```php
+$entity = $api->entityByUniqueid($uniqueidOrDraftToken);
+
+if ($entity->getIsDraft()) {
+    // not the live page, the link stops working at $entity->getDraftExpiresAt()
+}
+```
+
+Two things a route serving draft links has to respect:
+
+1. **The token does not look like a slug or a unique id**, so a parameter pattern (`->where(...)`)
+   has to let it through.
+2. **The entity type id does not apply to a token**, so resolve without it:
+
+```php
+Route::get('/tier/{slug}', function ($slug) {
+    return app(EntityController::class)
+        ->resolve(fn (EntitiesApi $api, $param) => $api->entityBySlug($param)) // no type id
+        ->render($slug, 'tier');
+});
+```
+
+### A draft response is never cached
+
+Once an entity was delivered through a draft link, the package makes the whole response
+uncacheable, for the client and for a cdn or another server side cache alike:
+
+```
+Cache-Control: no-store, no-cache, must-revalidate, max-age=0, private
+CDN-Cache-Control: no-store
+Vercel-CDN-Cache-Control: no-store
+Surrogate-Control: no-store
+X-Robots-Tag: noindex, nofollow
+```
+
+`ETag` and `Last-Modified` are dropped as well, and the `server_cache_ttl` / `client_cache_ttl`
+config is ignored for such a response. The draft snapshot is rewritten with every save of the
+editor and the link answers with a 404 once it expired, so a stored copy would keep serving content
+which is outdated or gone. The expiration timestamp is deliberately not used as a cache ttl.
+
+The headers are written by `Flyo\Laravel\Middleware\PreventDraftCaching`, which the package
+registers as the outermost global middleware, so it also covers routes which do not use the
+`CachingHeaders` middleware.
+
+### Rendering a hint
+
+`EntityController` hands the draft state to the view, so a template can tell the visitor that this
+is not the live page:
+
+```blade
+@if ($isDraft)
+    <p>Draft preview, this page is not online.
+        @if ($draftExpiresAt)
+            The link expires {{ \Carbon\Carbon::createFromTimestamp($draftExpiresAt)->diffForHumans() }}.
+        @endif
+    </p>
+@endif
+```
+
+Everywhere else the state is readable from `Flyo\Laravel\DraftMode`:
+
+```php
+Flyo\Laravel\DraftMode::isDraft();    // bool
+Flyo\Laravel\DraftMode::expiresAt();  // unix timestamp or null
+```
+
+A **custom controller** resolving an entity itself flags the draft by calling
+`Flyo\Laravel\Components\Head::metaEntity($entity)` (which every entity page does anyway to
+assign its meta data) or explicitly:
+
+```php
+$entity = $api->entityBySlug($slugOrDraftToken);
+
+Flyo\Laravel\DraftMode::detect($entity);
+```
+
 ## Multilanguage
 
 The requests will pass the configured APP_LOCALE (which is used in laravel for localization) to the flyo api. 

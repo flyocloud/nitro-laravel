@@ -3,6 +3,7 @@
 namespace Flyo\Laravel\Components;
 
 use Flyo\Bridge\Image;
+use Flyo\Laravel\DraftMode;
 use Flyo\Model\Entity;
 use Flyo\Model\Page as PageModel;
 use Illuminate\Contracts\View\Factory;
@@ -67,8 +68,17 @@ class Head extends Component
         self::jsonLd($page->getJsonld());
     }
 
+    /**
+     * Assigns the meta informations and the schema.org json-ld object of an entity response.
+     *
+     * An entity delivered through a draft link is flagged as uncacheable here as well, so an entity
+     * page assigning its meta data through this method is protected without a further call, see
+     * DraftMode.
+     */
     public static function metaEntity(Entity $entity)
     {
+        DraftMode::detect($entity);
+
         self::metaTitle($entity->getEntity()->getEntityTitle());
         self::metaDescription($entity->getEntity()->getEntityTeaser());
         self::metaImage($entity->getEntity()->getEntityImage());

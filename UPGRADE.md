@@ -1,5 +1,90 @@
 # Upgrade
 
+## 2.4 → 3.0
+
+**The package requires `flyo/nitro-php` 3.0**, `composer update flyo/nitro-laravel` pulls it.
+No code changes are required in a project which only uses the package, the sdk upgrade is
+breaking for applications reading presentation data off sitemap items themselves, see below.
+
+### What's new
+
+1. **A draft link is never cached.** A draft link is a shareable, expiring snapshot of an entity
+   which is still offline in Flyo, requested through the regular entity endpoints
+   (`entityBySlug()`, `entityByUniqueid()`) with a token in place of the slug or the unique id. The
+   api marks such a response with `is_draft`, the package turns that into a response nothing stores:
+
+   ```
+   Cache-Control: no-store, no-cache, must-revalidate, max-age=0, private
+   CDN-Cache-Control: no-store
+   Vercel-CDN-Cache-Control: no-store
+   Surrogate-Control: no-store
+   X-Robots-Tag: noindex, nofollow
+   ```
+
+   `ETag` and `Last-Modified` are removed as well and the `server_cache_ttl` / `client_cache_ttl`
+   config is ignored for the response. The snapshot is rewritten with every save of the editor and
+   the link answers with a 404 once it expired, so a cached copy would keep serving content which is
+   outdated or gone. The api does deliver `draft_expires_at`, but it is deliberately not used as a
+   cache ttl: not caching at all is the safer contract.
+
+   The headers are written by the new `Flyo\Laravel\Middleware\PreventDraftCaching`, registered by
+   the service provider as the outermost **global** middleware, so a draft is covered on every route,
+   also on one which does not use the `CachingHeaders` middleware. It does nothing until an entity
+   was resolved as a draft.
+
+2. **The draft state is readable.** `EntityController` hands `isDraft` (bool) and `draftExpiresAt`
+   (unix timestamp or null) to the view, so a template can render a hint that this is not the live
+   page. The same state is available anywhere through the new `Flyo\Laravel\DraftMode`:
+
+   ```php
+   Flyo\Laravel\DraftMode::isDraft();
+   Flyo\Laravel\DraftMode::expiresAt();
+   ```
+
+3. **A route serving draft links needs two things.** The draft token does not look like a slug or a
+   unique id, so a parameter pattern (`->where(...)`) has to let it through, and the entity type id
+   does not apply to a token, so resolve without it:
+
+   ```php
+   Route::get('/tier/{slug}', function ($slug) {
+       return app(EntityController::class)
+           ->resolve(fn (EntitiesApi $api, $param) => $api->entityBySlug($param)) // no type id
+           ->render($slug, 'tier');
+   });
+   ```
+
+### Breaking changes
+
+- **The sitemap endpoint returns its own model.** `Flyo\Api\SitemapApi::sitemap()` returns
+  `Flyo\Model\SitemapinterfaceInner[]` instead of `Flyo\Model\EntityinterfaceInner[]`. The
+  response was reduced to what a sitemap needs, a sitemap item only carries `entity_unique_id`,
+  `updated_at` and `href` plus the deprecated `entity_type`, `entity_slug` and `routes`. The
+  getters `getEntityTitle()`, `getEntityTeaser()`, `getEntityImage()`, `getEntityTimeStart()` and
+  `getEntityTypeId()` are gone from sitemap items, they are still delivered by `SearchApi::search()`
+  and the entities endpoints. Only an application calling the sitemap endpoint itself is affected,
+  the same is true for a type hint against `Flyo\Model\EntityinterfaceInner`, which becomes
+  `Flyo\Model\SitemapinterfaceInner`. `SitemapController` of the package is upgraded, it reads
+  `href` and `updated_at` only.
+
+### Behavior notes
+
+- **A custom controller resolving an entity is covered as well**, as long as it assigns the meta
+  data of the entity through `Flyo\Laravel\Components\Head::metaEntity($entity)` — that call
+  detects a draft. A controller not using the head component flags it explicitly with
+  `Flyo\Laravel\DraftMode::detect($entity)`, otherwise a draft response of that route can end up in
+  a cache.
+- **`EntityController` renders two more view variables**, `isDraft` and `draftExpiresAt`. A template
+  defining variables of the same name through `@php` or a view composer wins over them as before.
+- **Nothing changes for a regular request.** `is_draft` is `false` for every response which is not a
+  draft link, the cache headers of such a response are the ones `flyo.server_cache_ttl` and
+  `flyo.client_cache_ttl` configure.
+- **The debug response headers gained `Flyo-Draft`**, sending `'1'`/`'0'` next to `Flyo-Live-Edit`
+  when `APP_DEBUG` is on.
+- **`updated_at` of a sitemap item is unchanged in meaning**, it only moves when the delivered
+  content of the page or entity actually changed, a rebuild producing identical output does not bump
+  it. Entries without a resolvable url are omitted by the api now, the controller skipped them
+  before already.
+
 ## 2.1 → 2.2
 
 **No breaking changes.** `composer update flyo/nitro-laravel` is enough, no code changes are required in a project. It pulls `flyo/nitro-php` 2.2, which is the sdk release exposing the sitemap fields used below.

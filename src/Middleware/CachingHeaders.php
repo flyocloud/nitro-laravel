@@ -2,6 +2,7 @@
 
 namespace Flyo\Laravel\Middleware;
 
+use Flyo\Laravel\DraftMode;
 use Illuminate\Config\Repository;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -21,6 +22,15 @@ class CachingHeaders
 
         if ($isDebug) {
             $response->headers->set('Flyo-Live-Edit', $isLiveEdit ? '1' : '0');
+            $response->headers->set('Flyo-Draft', DraftMode::isDraft() ? '1' : '0');
+        }
+
+        // a response rendered from a draft link is never cached, not on the client and not on a
+        // cdn, no matter what the ttl config says, see DraftMode
+        if (DraftMode::isDraft()) {
+            PreventDraftCaching::apply($response);
+
+            return $response;
         }
 
         if ($response->isSuccessful() && ! $isDebug && ! $isLiveEdit) {

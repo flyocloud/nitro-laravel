@@ -6,6 +6,7 @@ use Exception;
 use Flyo\Api\EntitiesApi;
 use Flyo\Configuration;
 use Flyo\Laravel\Components\Head;
+use Flyo\Laravel\DraftMode;
 use Flyo\Model\Entity;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
@@ -49,6 +50,19 @@ use Illuminate\Http\RedirectResponse;
  *       ->render($uid, 'event.detail');
  * });
  * ```
+ *
+ * A draft link is resolved through the very same calls, with the draft token in place of the slug
+ * or the unique id. The entity type id does not apply to a token, so a route which has to serve
+ * draft links resolves without it and lets the token pass its parameter pattern:
+ *
+ * ```php
+ * Route::get('/event/{uid}', function($uid) {
+ *   return app(EntityController::class)->resolve(fn(EntitiesApi $api, $param) => $api->entityByUniqueid($param))->render($uid, 'event.detail');
+ * });
+ * ```
+ *
+ * The controller flags a draft response as uncacheable, see DraftMode, and hands `isDraft` plus
+ * `draftExpiresAt` to the view so it can render a hint that this is not the live page.
  */
 class EntityController
 {
@@ -92,11 +106,17 @@ class EntityController
 
         Head::metaEntity($entity);
 
+        // a draft link delivers an entity which is still offline in flyo, such a response must not
+        // be cached anywhere
+        $isDraft = DraftMode::detect($entity);
+
         return $this->view->make($view, [
             'model' => $entity->getModel(),
             'entity' => $entity->getEntity(),
             'translation' => $entity->getTranslation(),
             'breadcrumb' => $entity->getBreadcrumb(),
+            'isDraft' => $isDraft,
+            'draftExpiresAt' => DraftMode::expiresAt(),
         ]);
     }
 }
