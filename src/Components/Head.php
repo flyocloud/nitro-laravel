@@ -44,6 +44,12 @@ class Head extends Component
         self::$scripts[] = $script;
     }
 
+    public static function canonical(string $url)
+    {
+        $url = rtrim(request()->root(), '/').'/'.ltrim($url, '/');
+        self::$metas['canonical'] = $url;
+    }
+
     /**
      * Assigns the meta informations and the schema.org json-ld object of a page response.
      */
@@ -65,6 +71,8 @@ class Head extends Component
             }
         }
 
+        self::canonical($page->getHref());
+
         self::jsonLd($page->getJsonld());
     }
 
@@ -83,6 +91,10 @@ class Head extends Component
         self::metaDescription($entity->getEntity()->getEntityTeaser());
         self::metaImage($entity->getEntity()->getEntityImage());
         self::jsonLd($entity->getJsonld());
+
+        if (!empty($entity->getCanonical())) {
+            self::canonical($entity->getCanonical());
+        }
 
         if (config('app.env') === 'production') {
             self::script("fetch('{$entity->getEntity()->getEntityMetric()->getApi()}')");
@@ -126,6 +138,10 @@ class Head extends Component
             $html .= '<meta property="og:image" content="'.$img.'">'.PHP_EOL;
             $html .= '<meta name="twitter:image" content="'.$img.'">'.PHP_EOL;
             $html .= '<meta property="twitter:card" content="summary_large_image">'.PHP_EOL;
+        }
+
+        if (self::$metas['canonical'] ?? false) {
+            $html .= '<link rel="canonical" href="'.self::$metas['canonical'].'">'.PHP_EOL;
         }
 
         $appName = config('app.name', '');
