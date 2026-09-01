@@ -6,7 +6,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.3",
-        "laravel/framework": "^11.9",
+        "laravel/framework": "^12",
         "laravel/tinker": "^2.9",
         "flyo/nitro-laravel": "dev-main"
     },
