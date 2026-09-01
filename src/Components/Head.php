@@ -71,7 +71,9 @@ class Head extends Component
             }
         }
 
-        self::canonical($page->getHref());
+        if (! empty($page->getHref())) {
+            self::canonical($page->getHref());
+        }
 
         self::jsonLd($page->getJsonld());
     }
@@ -92,7 +94,7 @@ class Head extends Component
         self::metaImage($entity->getEntity()->getEntityImage());
         self::jsonLd($entity->getJsonld());
 
-        if (!empty($entity->getCanonical())) {
+        if (! empty($entity->getCanonical())) {
             self::canonical($entity->getCanonical());
         }
 
