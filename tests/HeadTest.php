@@ -3,6 +3,8 @@
 namespace Flyo\Laravel\Tests;
 
 use Flyo\Laravel\Components\Head;
+use Flyo\Model\Entity;
+use Flyo\Model\EntityInterface;
 use Flyo\Model\Meta;
 use Flyo\Model\MetaImage;
 use Flyo\Model\Page;
@@ -81,6 +83,42 @@ class HeadTest extends TestCase
 
         $this->assertArrayNotHasKey('image', Head::$metas);
         $this->assertStringNotContainsString('og:image', $this->render());
+    }
+
+    public function test_a_non_indexable_page_renders_a_robots_noindex_tag(): void
+    {
+        Head::metaPage(new Page(['is_indexable' => 0]));
+
+        $this->assertStringContainsString('<meta name="robots" content="noindex">', $this->render());
+    }
+
+    public function test_an_indexable_page_does_not_render_a_robots_noindex_tag(): void
+    {
+        Head::metaPage(new Page(['is_indexable' => 1]));
+
+        $this->assertStringNotContainsString('robots', $this->render());
+    }
+
+    public function test_the_noindex_flag_of_a_previous_page_is_not_kept(): void
+    {
+        Head::metaPage(new Page(['is_indexable' => 0]));
+        Head::metaPage(new Page(['is_indexable' => 1]));
+
+        $this->assertStringNotContainsString('robots', $this->render());
+    }
+
+    public function test_a_non_indexable_entity_renders_a_robots_noindex_tag(): void
+    {
+        Head::metaEntity(new Entity([
+            'is_indexable' => false,
+            'entity' => new EntityInterface([
+                'entity_title' => 'A Title',
+                'entity_teaser' => 'A Teaser',
+                'entity_image' => 'https://example.com/an-image.jpg',
+            ]),
+        ]));
+
+        $this->assertStringContainsString('<meta name="robots" content="noindex">', $this->render());
     }
 
     public function test_the_json_ld_of_a_previous_page_is_not_kept(): void

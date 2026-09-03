@@ -51,6 +51,29 @@ class Head extends Component
     }
 
     /**
+     * Flags the current document as not indexable, which renders a robots noindex meta tag.
+     */
+    public static function noIndex(bool $noIndex = true)
+    {
+        if ($noIndex) {
+            self::$metas['noindex'] = true;
+        } else {
+            unset(self::$metas['noindex']);
+        }
+    }
+
+    /**
+     * Whether the given is_indexable api value marks the document as not indexable.
+     *
+     * The value is nullable (and typed as int for pages, bool for entities), a missing value is not
+     * an instruction to hide the document from search engines.
+     */
+    private static function isNotIndexable(mixed $isIndexable): bool
+    {
+        return $isIndexable !== null && ! $isIndexable;
+    }
+
+    /**
      * Assigns the meta informations and the schema.org json-ld object of a page response.
      */
     public static function metaPage(PageModel $page)
@@ -75,6 +98,8 @@ class Head extends Component
             self::canonical($page->getHref());
         }
 
+        self::noIndex(self::isNotIndexable($page->getIsIndexable()));
+
         self::jsonLd($page->getJsonld());
     }
 
@@ -97,6 +122,8 @@ class Head extends Component
         if (! empty($entity->getCanonical())) {
             self::canonical($entity->getCanonical());
         }
+
+        self::noIndex(self::isNotIndexable($entity->getIsIndexable()));
 
         if (config('app.env') === 'production') {
             self::script("fetch('{$entity->getEntity()->getEntityMetric()->getApi()}')");
@@ -144,6 +171,10 @@ class Head extends Component
 
         if (self::$metas['canonical'] ?? false) {
             $html .= '<link rel="canonical" href="'.self::$metas['canonical'].'">'.PHP_EOL;
+        }
+
+        if (self::$metas['noindex'] ?? false) {
+            $html .= '<meta name="robots" content="noindex">'.PHP_EOL;
         }
 
         $appName = config('app.name', '');

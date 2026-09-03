@@ -510,16 +510,16 @@
         },
         {
             "name": "flyo/nitro-php",
-            "version": "3.1",
+            "version": "3.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/flyocloud/nitro-php-sdk.git",
-                "reference": "23b7c785e1adba205d02cdb68d6e55a2888ab2ae"
+                "reference": "4afaa2913ade0246e784420a920848d25aa741eb"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/flyocloud/nitro-php-sdk/zipball/23b7c785e1adba205d02cdb68d6e55a2888ab2ae",
-                "reference": "23b7c785e1adba205d02cdb68d6e55a2888ab2ae",
+                "url": "https://api.github.com/repos/flyocloud/nitro-php-sdk/zipball/4afaa2913ade0246e784420a920848d25aa741eb",
+                "reference": "4afaa2913ade0246e784420a920848d25aa741eb",
                 "shasum": ""
             },
             "require": {
@@ -553,9 +553,9 @@
             ],
             "support": {
                 "issues": "https://github.com/flyocloud/nitro-php-sdk/issues",
-                "source": "https://github.com/flyocloud/nitro-php-sdk/tree/3.1"
+                "source": "https://github.com/flyocloud/nitro-php-sdk/tree/3.2"
             },
-            "time": "2026-09-01T06:22:39+00:00"
+            "time": "2026-09-03T08:17:00+00:00"
         },
         {
             "name": "flyo/nitro-php-bridge",

@@ -216,6 +216,28 @@ where the `poi.blade.php` file in the `resources/views` folder could look like t
 </x-layout>
 ```
 
+## Search Engine Indexing
+
+Pages and entities carry an `is_indexable` flag (flyo/nitro-php 3.2). When the api marks a document
+as not indexable, `Head::metaPage()` and `Head::metaEntity()` render a robots meta tag in the head:
+
+```html
+<meta name="robots" content="noindex">
+```
+
+This is not access control, the page or the entity still resolves like any other, it is only kept
+out of the search engines (and out of the sitemap and the search endpoint on the api side). A draft
+entity is always flagged as not indexable, see [Draft Links](#draft-links).
+
+The flag can also be set by hand, for a page which the application itself wants to hide:
+
+```php
+Flyo\Laravel\Components\Head::noIndex();
+```
+
+Call it after `metaPage()` / `metaEntity()`, those assign the flag from the api response and would
+otherwise reset it.
+
 ## Draft Links
 
 A draft link is a shareable, expiring snapshot of an entity which is still offline in Flyo. It is
