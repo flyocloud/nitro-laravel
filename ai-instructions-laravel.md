@@ -36,7 +36,7 @@ resources/views/flyo/Text.blade.php
 
 Block views live in the directory the `views_namespace` config points at (`resources/views/flyo` by default). **The file name is the registration.** `Flyo\Laravel\Components\Block` resolves a block by looking up `<views_namespace>.<component>`, so a Flyo component named `Hero` renders `resources/views/flyo/Hero.blade.php`. There is no component map to maintain anywhere, and the name is case sensitive.
 
-**There is no type generation for PHP.** Unlike the Next.js and Astro integrations, there is no `flyo:types` step and no generated `flyo.ts`: a block's `content`, `config` and `items` arrive as plain `stdClass` / arrays. Field names are discovered from the Flyo interface instead (see the field discovery step), and every CMS field access must be written defensively.
+**There is no type generation for PHP.** Unlike the Next.js and Astro integrations, there is no generated `flyo.ts`: a block's `content`, `config` and `items` arrive as plain `stdClass` / arrays. Instead the project gets a `composer flyo:schema` command which downloads the api's OpenAPI schema as the authoritative field list (see the schema step), and every CMS field access must be written defensively.
 
 Do not hardcode secrets into source files. The Flyo token belongs in `.env`.
 
@@ -416,18 +416,83 @@ echo Image::tag(
 );
 ```
 
-### 9. Discover the block fields (no code generation for PHP)
+### 9. Add the schema command (there is no code generation for PHP)
 
-There is no generated type file for PHP, so before writing a block view you have to know its real field names. Use one of these, in this order:
+The Next.js and Astro integrations generate a type per block with `npm run flyo:types`. PHP has no equivalent, so the authoritative field list is the project's own OpenAPI schema, which the Flyo API serves for the configured token. Give the project a command for it instead of pasting a token into a shell.
+
+Create `app/Console/Commands/FlyoSchema.php`:
+
+```php
+<?php
+
+namespace App\Console\Commands;
+
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Http;
+
+class FlyoSchema extends Command
+{
+    protected $signature = 'flyo:schema';
+
+    protected $description = 'Download the Flyo OpenAPI schema, which documents the fields of every block, entity and container';
+
+    public function handle(): int
+    {
+        $token = config('flyo.token');
+
+        if (empty($token)) {
+            $this->error('No Flyo token configured, set FLYO_TOKEN in the .env file.');
+
+            return self::FAILURE;
+        }
+
+        $response = Http::get('https://api.flyo.cloud/nitro/v1/openapi/schemas', ['token' => $token]);
+
+        if ($response->failed()) {
+            $this->error('The schema request failed with status '.$response->status().'.');
+
+            return self::FAILURE;
+        }
+
+        $path = storage_path('app/flyo-schema.json');
+
+        file_put_contents($path, $response->body());
+
+        $this->info('Schema written to '.$path);
+
+        return self::SUCCESS;
+    }
+}
+```
+
+Laravel discovers commands in `app/Console/Commands` on its own, so there is nothing to register. Then expose it as a composer script, so the entry point matches the `flyo:types` script of the other integrations. Merge into the project's `composer.json`:
+
+```json
+{
+    "scripts": {
+        "flyo:schema": "@php artisan flyo:schema"
+    }
+}
+```
+
+Run it whenever the CMS block fields changed:
+
+```sh
+composer flyo:schema
+```
+
+Two properties of this command are the point of it: the token comes from `config/flyo.php`, so it is read from the `.env` and never lands in a shell history, a script or a commit; and the schema is written to `storage/app`, which is git ignored in a standard Laravel project. `Http` is available without adding a dependency, `flyo/nitro-php` already requires Guzzle.
+
+To find a block in the downloaded schema, list what it defines and then read that definition's `content`, `config` and `items` properties:
+
+```sh
+grep -o '"Block[A-Za-z0-9]*"' storage/app/flyo-schema.json | sort -u
+```
+
+So, before writing a block view, resolve its real field names from one of these, in this order:
 
 1. **The Flyo interface** the user has in the CMS. Ask them for the block's field identifiers if they are at hand.
-2. **The OpenAPI schema of the project**, which is the authoritative list. Fetch it once and read the block definitions:
-
-   ```sh
-   curl -s 'https://api.flyo.cloud/nitro/v1/openapi/schemas?token=<the-flyo-token>' -o storage/app/flyo-schema.json
-   ```
-
-   Look for the schema of the block (a `Block<Name>` shaped definition) and read its `content`, `config` and `items` properties. Nothing writes this file into the repository: `storage/app` is git ignored in a standard Laravel project, and the token must not end up in a committed file or in a script.
+2. **The schema**, as above. This is the authoritative list.
 3. **Dump the block** while the page renders, which is the fastest loop during development:
 
    ```blade
@@ -536,8 +601,8 @@ Before writing code, make sure you know:
 There is no generated type file in a PHP project, so resolve the fields before inventing any:
 
 - ask the user for the field identifiers of the block in the Flyo interface, or
-- read the block definition in the OpenAPI schema:
-  `curl -s 'https://api.flyo.cloud/nitro/v1/openapi/schemas?token=<the-flyo-token>' -o storage/app/flyo-schema.json`, or
+- refresh and read the project's OpenAPI schema, which is authoritative:
+  `composer flyo:schema`, then `grep -o '"Block[A-Za-z0-9]*"' storage/app/flyo-schema.json | sort -u` and read that definition's `content`, `config` and `items` properties, or
 - dump the block while the page renders: `<pre>{{ print_r($block->getContent(), true) }}</pre>`.
 
 If you cannot confirm the fields, ask the user instead of guessing. Do not invent field names.
@@ -726,7 +791,7 @@ The view receives `$entity` (the `EntityInterface` with `getEntityTitle()`, `get
 </x-layout>
 ```
 
-A **custom controller** which resolves an entity itself has to assign the meta data, which also flags a draft:
+A **custom controller** which resolves an entity itself calls `Head::metaEntity($entity)`, always:
 
 ```php
 use Flyo\Laravel\Components\Head;
@@ -736,11 +801,7 @@ $entity = (new EntitiesApi(null, $config))->entityBySlug($slug);
 Head::metaEntity($entity);   // meta data, canonical, json-ld, noindex and draft detection
 ```
 
-If the controller does not use the head component, flag the draft explicitly, otherwise a draft response of that route can end up in a cache:
-
-```php
-Flyo\Laravel\DraftMode::detect($entity);
-```
+That single call is the whole contract of an entity route. It assigns the title, description, image, canonical url and json-ld, flags a non indexable entity with `noindex`, and detects a draft link so the response is not cached. `EntityController` does it for you, a custom controller does it right after resolving the entity. Never make the call conditional and never replace it with a hand rolled equivalent: every branch which skips it is a route that silently loses its meta data or caches a draft.
 
 **Draft links.** A draft link is a shareable, expiring snapshot of an entity which is still offline in Flyo. It arrives as an opaque token in place of the slug or the unique id, so it lands on the entity route the project already has, and the response carries `is_draft` plus a `draft_expires_at` timestamp. Two rules keep it working, and both are easy to break:
 
@@ -890,7 +951,7 @@ Project conventions:
 - CMS page routes are registered per request by the package service provider from the Flyo config response, so they do not show up in `php artisan route:list`. Keep `routes/web.php` free of routes which collide with CMS page slugs.
 - Flyo block views live in `resources/views/flyo` and are resolved by file name (the Flyo component name), there is no component map.
 - Every block view puts `@editable($block)` on its outermost element, and the layout includes `<x-flyo::head />`, otherwise live edit does not work.
-- CMS fields are untyped `stdClass`, there is no type generation for PHP. Guard every field access and confirm field names against the Flyo interface or the OpenAPI schema instead of guessing.
+- CMS fields are untyped `stdClass`, there is no type generation for PHP. Guard every field access, and confirm field names with `composer flyo:schema` (writes the api's OpenAPI schema to `storage/app/flyo-schema.json`) instead of guessing.
 - WYSIWYG fields render through `<x-wysiwyg />`, images through `<x-flyo-image />` / `Flyo\Bridge\Image` with explicit width and height.
 - Build one named block at a time with the `.claude/skills/flyo-block` skill.
 ```
@@ -904,6 +965,7 @@ After implementation, run:
 ```sh
 php artisan config:clear
 php artisan view:clear
+composer flyo:schema          # confirms the token works and gives you the field reference
 ./vendor/bin/pint --dirty     # if the project uses Pint
 php artisan serve
 ```
@@ -926,6 +988,8 @@ resources/views/components/layout/footer.blade.php exists
 Header and Footer use the user-provided Flyo container identifiers
 resources/views/components/wysiwyg.blade.php exists
 resources/views/components/flyo-image.blade.php exists (or the project uses Flyo\Bridge\Image directly)
+app/Console/Commands/FlyoSchema.php exists and composer flyo:schema is wired in composer.json
+Entity routes assign their meta data through Head::metaEntity(), unconditionally
 Every block used by the CMS has a view in resources/views/flyo with the exact component name
 Every block view carries @editable($block) on its outermost element
 Entity detail routes resolve without an entity type id and do not gate the route param behind a pattern (draft links)
