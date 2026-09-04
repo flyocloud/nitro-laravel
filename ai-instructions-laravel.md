@@ -10,14 +10,14 @@ Repository and documentation:
 
 ## Important constraints
 
-The package requires **PHP 8.3+** and **Laravel 11 or 12**, and it renders with **Blade**.
+The package requires **PHP 8.3+** and **Laravel 11, 12 or 13**, and it renders with **Blade**. If the project is on an older Laravel or PHP, stop and say so instead of installing: `composer require` would fail on the platform requirements anyway.
 
 The integration is **server rendered on every request**. The service provider asks the Flyo API for the site configuration during `boot()` and registers one route per CMS page from that response. There is no build step, no static export and no generated route file. Two things follow from that:
 
 - The CMS routes exist only in an HTTP request context. The provider skips all of this when `runningInConsole()` is true, so `php artisan route:list` does **not** show the CMS pages. That is expected and not a broken setup, but it also means `php artisan route:cache` must not be used (see the routing step).
 - Every request performs a config API call before the page is rendered. Keep the cache headers configured (see the caching step) and never ship a develop token to production.
 
-Before changing files, check `routes/web.php`. A default `Route::get('/', ...)` welcome route, and any other route whose uri collides with a CMS page slug, has to go: the CMS route of that path wins and the hand written one silently stops answering (see the routing step for why). Ask the user before deleting a route which looks intentional.
+Before changing files, check `routes/web.php`. A default `Route::get('/', ...)` welcome route, and any other route whose uri is identical to a CMS page slug, has to go: it replaces the CMS route of that path and the Flyo page becomes unreachable (see the routing step, a route which only overlaps by pattern behaves the other way round). Ask the user before deleting a route which looks intentional.
 
 Laravel conventions this advisory follows:
 
@@ -100,7 +100,7 @@ resources/views/components/layout/footer.blade.php   =>  <x-layout.footer />
 
 ### 3. Homepage ownership
 
-Ask whether the homepage should come from Flyo. If yes, remove the default welcome route (see implementation step 3), it never answers anyway. If the project has to keep a hand built homepage, tell the user that a Flyo page with the same slug takes precedence over it, so that page has to be renamed or taken offline in the CMS.
+Ask whether the homepage should come from Flyo. If yes, the default welcome route has to be removed, it would keep answering `/` and the Flyo home page would never be reached (see implementation step 3). If the project has to keep a hand built homepage, it stays in charge of `/` and the Flyo page of that path is simply unused.
 
 ### 4. Entities and languages
 
@@ -170,7 +170,12 @@ Route::get('/', function () {
 
 Keep everything the application really needs (auth routes, api endpoints, entity detail routes). Only page paths which Flyo serves have to be free.
 
-**Which one wins matters and it is not the obvious one.** The package registers the CMS routes while service providers boot, and Laravel loads `routes/web.php` afterwards, in a `booted` callback. The router returns the first registered match, so a **CMS page route wins over a route of the same uri in `routes/web.php`**. A leftover welcome route is therefore dead code, and a hand written route whose uri collides with a CMS page slug silently stops answering. Check for collisions before blaming the route.
+**Which route wins depends on how the two collide, and both cases bite.** The package registers the CMS routes while the service providers boot, and Laravel loads `routes/web.php` afterwards, in a `booted` callback. From that:
+
+- **Same uri**, for example `/` in `routes/web.php` and the Flyo home page. The route collection is keyed by method and uri, so the later registration *replaces* the earlier one: the hand written route wins and the CMS page of that path is unreachable. This is the collision to clean up.
+- **Overlapping pattern**, for example a catch-all or a `/{slug}` route in `routes/web.php` next to concrete CMS page paths. Here the router returns the first registered match, which is the CMS route. A wildcard in `routes/web.php` therefore never sees a path Flyo serves, and it stays reachable only for the paths Flyo does not.
+
+So a leftover welcome route does shadow the Flyo homepage, while a hand written wildcard silently loses to the CMS pages. Check which of the two you are looking at before blaming a route.
 
 **Do not run `php artisan route:cache` on a project using this package.** The CMS routes only exist inside an HTTP request, so a console run never sees them, and loading a cached route file replaces the whole route collection at runtime, which drops the CMS routes that were just registered. Remove the command from deploy scripts and CI (`config:cache`, `view:cache` and `event:cache` are fine), and if the project has cached routes already, clear them:
 

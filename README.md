@@ -28,6 +28,8 @@ The advisory covers:
 
 ## Usage
 
+Requires PHP 8.3 or newer and Laravel 11, 12 or 13.
+
 ```sh
 composer require flyo/nitro-laravel
 ```
