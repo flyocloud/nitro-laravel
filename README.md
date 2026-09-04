@@ -1,5 +1,35 @@
 # Flyo Nitro Laravel Framework Module
 
+<details>
+<summary><strong>AI coding agent instructions (Laravel integration)</strong></summary>
+
+The file [ai-instructions-laravel.md](ai-instructions-laravel.md) contains a complete advisory for integrating Flyo Nitro CMS into an **existing Laravel project** using `flyo/nitro-laravel`.
+
+It is written to be pasted directly into a coding agent (Claude, Copilot, Cursor, etc.) as a system prompt or task description.
+
+**Copy the raw instructions:**
+
+- GitHub raw URL: `https://raw.githubusercontent.com/flyocloud/nitro-laravel/refs/heads/main/ai-instructions-laravel.md`
+- Or open [ai-instructions-laravel.md](ai-instructions-laravel.md) and use the **Raw** button.
+
+The advisory covers:
+
+- Package installation, `vendor:publish` and the `config/flyo.php` settings
+- Environment variables, access token handling and the routes which have to make way for the CMS pages
+- Layout integration with `<x-flyo::head />` and `<x-flyo::debug-info />`, plus `Header` and `Footer` components driven by Flyo containers
+- The `cms.blade.php` entry view and how block views are resolved by component name
+- WYSIWYG and image helpers built on `Flyo\Bridge\Wysiwyg` and `Flyo\Bridge\Image`
+- How to discover block fields without type generation (PHP has no generated types)
+- A reusable Claude skill (`.claude/skills/flyo-block/SKILL.md`) for building a named block from a design or an existing Blade view
+- Entity detail routes, draft links, cache headers, sitemap and i18n
+- A final validation checklist
+
+</details>
+
+## Usage
+
+Requires PHP 8.3 or newer and Laravel 11, 12 or 13.
+
 ```sh
 composer require flyo/nitro-laravel
 ```
@@ -372,6 +402,35 @@ public function __construct(public Flyo\Model\Page $page)
 // or facade
 /** @var Flyo\Model\Page $cfg */
 $page = app(Flyo\Model\Page::class);
+```
+
+## Example `AGENTS.md`
+
+If you build your project with an AI coding assistant (Claude Code, Copilot, Cursor, etc.), drop an `AGENTS.md` file in your project root so the assistant understands your stack and knows where to find the Flyo/Nitro documentation. `AGENTS.md` is the vendor-neutral convention most coding agents read on startup, and if your tool uses a specific memory file such as `CLAUDE.md`, use that name too (or have it reference `AGENTS.md`).
+
+Here is a minimal starting point you can copy and adapt. Note that it **self-references this library's docs**, the usage guide and the AI integration advisory, so the assistant can pull in the full Flyo Nitro setup and context on demand:
+
+```markdown
+# Flyo Nitro CMS
+
+This is the new XYZ website of XYZ.
+
+It uses the **Flyo Nitro** headless CMS via `flyo/nitro-laravel` to manage the content of the website. Pages are composed of CMS-driven blocks, plus entities and containers, rendered with Laravel Blade.
+
+When working on any Flyo/Nitro code (block views, entities, `config/flyo.php`, the layout, routes), consult these sources for the full context of the library:
+
+- Usage guide & API reference: https://github.com/flyocloud/nitro-laravel#usage
+- AI integration advisory (raw): https://raw.githubusercontent.com/flyocloud/nitro-laravel/refs/heads/main/ai-instructions-laravel.md
+- Full Nitro CMS documentation: https://docs.flyo.cloud/doc/integrations-nitro-cms
+
+Project conventions:
+
+- CMS page routes are registered per request by the package service provider from the Flyo config response, so they do not show up in `php artisan route:list`. Keep `routes/web.php` free of routes which collide with CMS page slugs.
+- Flyo block views live in `resources/views/flyo` and are resolved by file name (the Flyo component name), there is no component map.
+- Every block view puts `@editable($block)` on its outermost element, and the layout includes `<x-flyo::head />`, otherwise live edit does not work.
+- CMS fields are untyped `stdClass`, there is no type generation for PHP. Guard every field access and confirm field names against the Flyo interface or the OpenAPI schema instead of guessing.
+- WYSIWYG fields render through `<x-wysiwyg />`, images through `<x-flyo-image />` / `Flyo\Bridge\Image` with explicit width and height.
+- Build one named block at a time with the `.claude/skills/flyo-block` skill.
 ```
 
 ## Documentation

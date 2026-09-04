@@ -22,7 +22,7 @@
     "require": {
         "php": "^8.3",
         "flyo/nitro-php": "^3.2",
-        "laravel/framework": "^11|^12",
+        "laravel/framework": "^11|^12|^13",
         "flyo/nitro-php-bridge": "^1.2"
     },
     "extra": {
@@ -35,7 +35,7 @@
     "require-dev": {
         "larastan/larastan": "^3.0",
         "laravel/pint": "^1.17",
-        "orchestra/testbench": "^9.0|^10.0"
+        "orchestra/testbench": "^9.0|^10.0|^11.0"
     },
     "scripts": {
         "pint": "./vendor/bin/pint",
