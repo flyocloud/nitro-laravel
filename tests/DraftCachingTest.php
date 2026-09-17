@@ -23,6 +23,7 @@ class DraftCachingTest extends TestCase
         return new Repository(['flyo' => $flyo + [
             'live_edit' => false,
             'server_cache_ttl' => 900,
+            'server_cache_stale_while_revalidate_ttl' => 450,
             'client_cache_ttl' => 1200,
         ]]);
     }
@@ -38,9 +39,42 @@ class DraftCachingTest extends TestCase
     {
         $response = $this->cachingHeaders();
 
+        // the stale window lets the edge answer from its expired copy while a single background
+        // request refreshes it, instead of sending every waiting visitor to the origin
+        $this->assertSame('max-age=900, stale-while-revalidate=450', $response->headers->get('CDN-Cache-Control'));
+        $this->assertSame('max-age=900, stale-while-revalidate=450', $response->headers->get('Vercel-CDN-Cache-Control'));
+        $this->assertStringContainsString('max-age=1200', (string) $response->headers->get('Cache-Control'));
+    }
+
+    public function test_the_stale_window_can_be_turned_off(): void
+    {
+        $response = $this->cachingHeaders(['server_cache_stale_while_revalidate_ttl' => 0]);
+
         $this->assertSame('max-age=900', $response->headers->get('CDN-Cache-Control'));
         $this->assertSame('max-age=900', $response->headers->get('Vercel-CDN-Cache-Control'));
-        $this->assertStringContainsString('max-age=1200', (string) $response->headers->get('Cache-Control'));
+    }
+
+    public function test_a_non_numeric_or_negative_stale_window_is_treated_as_off(): void
+    {
+        $this->assertSame('max-age=900', $this->cachingHeaders(['server_cache_stale_while_revalidate_ttl' => null])->headers->get('CDN-Cache-Control'));
+        $this->assertSame('max-age=900', $this->cachingHeaders(['server_cache_stale_while_revalidate_ttl' => -10])->headers->get('CDN-Cache-Control'));
+    }
+
+    public function test_a_disabled_server_cache_never_gets_a_stale_window(): void
+    {
+        // no-store has no business carrying a revalidation window
+        $response = $this->cachingHeaders(['server_cache_ttl' => 0]);
+
+        $this->assertSame('no-store', $response->headers->get('CDN-Cache-Control'));
+        $this->assertSame('no-store', $response->headers->get('Vercel-CDN-Cache-Control'));
+    }
+
+    public function test_the_cdn_cache_control_value_is_built_from_the_two_ttls(): void
+    {
+        $this->assertSame('max-age=1800, stale-while-revalidate=900', CachingHeaders::cdnCacheControl(1800, 900));
+        $this->assertSame('max-age=1800', CachingHeaders::cdnCacheControl(1800));
+        $this->assertSame('max-age=1800', CachingHeaders::cdnCacheControl(1800, 0));
+        $this->assertSame('no-store', CachingHeaders::cdnCacheControl(0, 900));
     }
 
     public function test_the_caching_middleware_does_not_cache_a_draft_response(): void
@@ -64,6 +98,7 @@ class DraftCachingTest extends TestCase
 
         $this->assertStringNotContainsString('max-age=3600', (string) $response->headers->get('Cache-Control'));
         $this->assertSame('no-store', $response->headers->get('CDN-Cache-Control'));
+        $this->assertStringNotContainsString('stale-while-revalidate', (string) $response->headers->get('CDN-Cache-Control'));
     }
 
     public function test_the_middleware_registers_itself_globally(): void

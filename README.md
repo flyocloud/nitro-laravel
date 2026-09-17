@@ -268,6 +268,46 @@ Flyo\Laravel\Components\Head::noIndex();
 Call it after `metaPage()` / `metaEntity()`, those assign the flag from the api response and would
 otherwise reset it.
 
+## Cache Headers
+
+`Flyo\Laravel\Middleware\CachingHeaders` is applied to the CMS page routes and the sitemap. It
+writes one header for the browser and the two cdn specific ones which take precedence on the edge:
+
+```
+Cache-Control: max-age=1200                                          # client_cache_ttl
+CDN-Cache-Control: max-age=900, stale-while-revalidate=450           # server_cache_ttl
+Vercel-CDN-Cache-Control: max-age=900, stale-while-revalidate=450
+```
+
+The `stale-while-revalidate` window is what keeps the origin quiet around an expiry: without it the
+moment an edge entry expires turns into an origin request for every visitor waiting on that url at
+that moment, with it the edge keeps answering from the stale copy and refreshes itself with a single
+background request. It is configured with `server_cache_stale_while_revalidate_ttl`, which defaults
+to `450` seconds (half of the default `server_cache_ttl`). Nothing has to be changed to get that
+behavior, set it to `0` to send `max-age` alone:
+
+```php
+// config/flyo.php
+'server_cache_ttl' => env('FLYO_SERVER_CACHE_TTL', 900),
+'server_cache_stale_while_revalidate_ttl' => env('FLYO_SERVER_CACHE_STALE_WHILE_REVALIDATE_TTL', 0),
+```
+
+A visitor can therefore be served a page which is up to
+`server_cache_ttl + server_cache_stale_while_revalidate_ttl` seconds old, but only until the
+background refresh of the first request after the expiry has finished.
+
+Set `server_cache_ttl` or `client_cache_ttl` to `0` to opt out of that layer, a `server_cache_ttl`
+of `0` sends `no-store` to the edge and never carries a stale window. Caching is switched off
+entirely when `flyo.live_edit` is enabled or `APP_DEBUG` is on, and a non successful response is
+not cached either. `Flyo\Laravel\Middleware\CachingHeaders::cdnCacheControl($ttl, $staleTtl)`
+builds the value of the cdn headers, in case an application writes them somewhere else too.
+
+Add the middleware to a hand written route which serves CMS content and should be cached the same way:
+
+```php
+Route::get('/tier/{slug}', $handler)->middleware(\Flyo\Laravel\Middleware\CachingHeaders::class);
+```
+
 ## Draft Links
 
 A draft link is a shareable, expiring snapshot of an entity which is still offline in Flyo. It is

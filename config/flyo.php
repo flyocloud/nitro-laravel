@@ -24,6 +24,14 @@ return [
     // will set Vercel-CDN-Cache-Control and CDN-Cache-Control headers
     'server_cache_ttl' => env('FLYO_SERVER_CACHE_TTL', 900),
 
+    // The window in which a CDN may answer from an already expired cache entry while it refreshes
+    // itself with a single background request, in seconds. Default is 450 seconds (half of the
+    // default server TTL), it is appended to the CDN headers as stale-while-revalidate.
+    // Without it every visitor waiting on a url at the moment its edge entry expires is sent
+    // through to the origin. In exchange a page can be up to server_cache_ttl + this many seconds
+    // old, but only until that background refresh has finished. Use 0 to disable the window.
+    'server_cache_stale_while_revalidate_ttl' => env('FLYO_SERVER_CACHE_STALE_WHILE_REVALIDATE_TTL', 450),
+
     // The TTL for client-side cache headers, in seconds.
     // Default is 1200 seconds (20 minutes) its only availble if the liveEdit is disabled. Use 0 to disable client caching.
     // will set Cache-Control header

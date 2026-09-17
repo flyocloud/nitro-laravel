@@ -1,5 +1,45 @@
 # Upgrade
 
+## 3.2 → 3.3
+
+**No breaking changes.** `composer update flyo/nitro-laravel` is enough, no code changes are
+required in a project.
+
+### What's new
+
+1. **The cdn headers carry `stale-while-revalidate`.** `Vercel-CDN-Cache-Control` and
+   `CDN-Cache-Control` used to be written as `max-age=<server_cache_ttl>` only, which turns the
+   moment an edge entry expires into an origin request for every visitor waiting on that url at
+   that moment. They now carry a `stale-while-revalidate` window as well, so the edge answers from
+   the stale copy and refreshes itself with a single background request:
+
+   ```diff
+   -Vercel-CDN-Cache-Control: max-age=900
+   -CDN-Cache-Control: max-age=900
+   +Vercel-CDN-Cache-Control: max-age=900, stale-while-revalidate=450
+   +CDN-Cache-Control: max-age=900, stale-while-revalidate=450
+   ```
+
+   The window is configured with the new `flyo.server_cache_stale_while_revalidate_ttl` (`450` by
+   default, half of the default `server_cache_ttl`). Nothing has to be changed to get the new
+   behavior, set it to `0` to keep the old headers:
+
+   ```diff
+    // config/flyo.php
+    'server_cache_ttl' => env('FLYO_SERVER_CACHE_TTL', 900),
+   +'server_cache_stale_while_revalidate_ttl' => env('FLYO_SERVER_CACHE_STALE_WHILE_REVALIDATE_TTL', 0),
+   ```
+
+   A project which published `config/flyo.php` before does not have the key, the middleware falls
+   back to `450` seconds, so republishing the config file is not required either. Note that a
+   visitor can now be served a page which is up to
+   `server_cache_ttl + server_cache_stale_while_revalidate_ttl` seconds old, but only until the
+   background refresh of the first request after the expiry has finished.
+
+   A `server_cache_ttl` of `0` and a draft response are unaffected, both still send `no-store` to
+   the edge, never a stale window. `Flyo\Laravel\Middleware\CachingHeaders::cdnCacheControl()`
+   builds the value, in case an application writes the cdn headers somewhere else too.
+
 ## 2.4 → 3.0
 
 **The package requires `flyo/nitro-php` 3.0**, `composer update flyo/nitro-laravel` pulls it.

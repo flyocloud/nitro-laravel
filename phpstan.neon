@@ -8,3 +8,17 @@ parameters:
 
     # Level 9 is the highest level
     level: 5
+
+    ignoreErrors:
+        # The package registers its views under the flyo namespace at runtime and the cms entry view
+        # lives in the application, so larastan can not resolve either of them to a view-string.
+        # reportUnmatched keeps the build green on a larastan release which does not report it, the
+        # workflow installs with composer update and therefore always analyses against the latest.
+        -
+            identifier: argument.type
+            message: '#expects view-string, string given#'
+            reportUnmatched: false
+            paths:
+                - src/Components/Page.php
+                - src/Components/Slot.php
+                - src/ServiceProvider.php
