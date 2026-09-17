@@ -16,6 +16,9 @@ return [
     // Default is 900 seconds (15 minutes) its only availble if the liveEdit is disabled. Use 0 to disable client caching.
     'server_cache_ttl' => env('FLYO_SERVER_CACHE_TTL', 900),
 
+    // The stale-while-revalidate window for the CDN headers, in seconds. Use 0 to disable it.
+    'server_cache_stale_while_revalidate_ttl' => env('FLYO_SERVER_CACHE_STALE_WHILE_REVALIDATE_TTL', 450),
+
     // TTL (Time-To-Live) for server-side cache headers, in seconds.
     // Default is 1200 seconds (20 minutes) its only availble if the liveEdit is disabled. Use 0 to disable server caching.
     'client_cache_ttl' => env('FLYO_CLIENT_CACHE_TTL', 1200),
