@@ -7,6 +7,7 @@ use Flyo\Api\PagesApi;
 use Flyo\Api\SitemapApi;
 use Flyo\Configuration;
 use Flyo\Laravel\Components\Head;
+use Flyo\Laravel\Console\TypesCommand;
 use Flyo\Laravel\Controllers\SitemapController;
 use Flyo\Laravel\Middleware\CachingHeaders;
 use Flyo\Laravel\Middleware\PreventDraftCaching;
@@ -46,6 +47,14 @@ class ServiceProvider extends SupportServiceProvider
         Blade::directive('editable', function ($expression) {
             return '<?php echo '.Editable::class."::attr({$expression}); ?>";
         });
+
+        // The type generator writes files into the application, so it is only registered on the
+        // command line, see TypesCommand.
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                TypesCommand::class,
+            ]);
+        }
 
         if (! $this->app->runningInConsole()) {
             $locales = $configRepository->get('flyo.locales', []);

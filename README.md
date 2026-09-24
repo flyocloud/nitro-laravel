@@ -19,7 +19,7 @@ The advisory covers:
 - Layout integration with `<x-flyo::head />` and `<x-flyo::debug-info />`, plus `Header` and `Footer` components driven by Flyo containers
 - The `cms.blade.php` entry view and how block views are resolved by component name
 - WYSIWYG and image helpers built on `Flyo\Bridge\Wysiwyg` and `Flyo\Bridge\Image`
-- How to discover block fields without type generation (PHP has no generated types)
+- How to discover block fields from the OpenAPI schema of the project
 - A reusable Claude skill (`.claude/skills/flyo-block/SKILL.md`) for building a named block from a design or an existing Blade view
 - Entity detail routes, draft links, cache headers, sitemap and i18n
 - A final validation checklist
@@ -89,6 +89,53 @@ In raw php templates, or anywhere else the blade directive is not available (a c
 ```
 
 `Editable::attr($block)` returns the escaped `data-flyo-uid="..."` attribute, or an empty string when live edit is disabled. `Editable::uid($block)` gives you the raw uid, `Editable::isEnabled()` the live edit state. The marker alone is not enough though: the javascript which makes it interactive is loaded by the `<x-flyo::head />` component, so your layout has to include it.
+
+## Typed Schemas
+
+`php artisan flyo:types` generates a class per block, navigation container and entity type of your integration into `app/Flyo`, so the IDE and PHPStan know the fields instead of a bare `stdClass`:
+
+```
+app/Flyo/
+├── Blocks/        BlockHero.php, BlockText.php, ...   namespace App\Flyo\Blocks
+├── Containers/    ContainerMain.php, ...              namespace App\Flyo\Containers
+└── Entities/      EntityArticle.php, ...              namespace App\Flyo\Entities
+```
+
+```sh
+php artisan flyo:types             # regenerate the classes
+php artisan flyo:types --dry-run   # report what would change, write nothing
+php artisan flyo:types --check     # write nothing, exit with code 6 when the classes are out of date
+```
+
+The command runs the `flyo-generate-types` generator of `flyo/nitro-php` against the authenticated `https://api.flyo.cloud/nitro/v1/openapi/schemas` endpoint, the public OpenAPI document has no typed schemas. The token is taken from `config/flyo.php`, so the `FLYO_TOKEN` of the `.env` file is used and the token is never passed as a command line argument. The classes go into the `Flyo` sub-namespace of the application namespace, `App\Flyo` for a standard Laravel project.
+
+Annotate a block view with its generated class instead of `\Flyo\Model\Block`:
+
+```blade
+<?php
+/** @var \App\Flyo\Blocks\BlockHero $block */
+?>
+<section @editable($block)>
+    <h1>{{ $block->getContent()?->title }}</h1>
+</section>
+```
+
+The classes are documentation only: nothing instantiates them, at runtime a block is still a `\Flyo\Model\Block` and its fields are still plain objects which can be empty, so keep guarding the field access. See the [Typed Schemas section of the SDK](https://github.com/flyocloud/nitro-php-sdk#-typed-schemas) for what the container and entity classes narrow.
+
+Commit the generated files and run `php artisan flyo:types --check` in CI, with `FLYO_TOKEN` provided as a secret. To have the same entry point as the Next.js and Astro integrations (`npm run flyo:types`), add a composer script, anything after `--` is appended to the command:
+
+```json
+{
+    "scripts": {
+        "flyo:types": "@php artisan flyo:types"
+    }
+}
+```
+
+```sh
+composer flyo:types
+composer flyo:types -- --check
+```
 
 ## Live Edit
 
@@ -495,7 +542,7 @@ Project conventions:
 - CMS page routes are registered per request by the package service provider from the Flyo config response, so they do not show up in `php artisan route:list`. Keep `routes/web.php` free of routes which collide with CMS page slugs.
 - Flyo block views live in `resources/views/flyo` and are resolved by file name (the Flyo component name), there is no component map.
 - Every block view puts `@editable($block)` on its outermost element, and the layout includes `<x-flyo::head />`, otherwise live edit does not work.
-- CMS fields are untyped `stdClass`, there is no type generation for PHP. Guard every field access and confirm field names against the Flyo interface or the OpenAPI schema instead of guessing.
+- Block, container and entity fields are typed by the classes `php artisan flyo:types` generates into `app/Flyo`. Annotate block views with them, regenerate them after a schema change, and still guard every field access: at runtime the fields are plain objects which can be empty. Never guess a field name.
 - WYSIWYG fields render through `<x-wysiwyg />`, images through `<x-flyo-image />` / `Flyo\Bridge\Image` with explicit width and height.
 - Build one named block at a time with the `.claude/skills/flyo-block` skill.
 ```

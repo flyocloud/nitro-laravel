@@ -1,5 +1,33 @@
 # Upgrade
 
+## 3.4 → 3.5
+
+**No breaking changes.** `composer update flyo/nitro-laravel` is enough, no code changes are
+required in a project. The package now requires `flyo/nitro-php` 3.6 or newer, which the update
+pulls in, nothing in its api or models changed.
+
+### What's new
+
+1. **`php artisan flyo:types` generates the typed schema classes.** It runs the
+   `flyo-generate-types` generator of `flyo/nitro-php` with the token of `config/flyo.php` and
+   writes a class per block, container and entity type into `app/Flyo` (`App\Flyo\Blocks`,
+   `App\Flyo\Containers`, `App\Flyo\Entities`). `--dry-run` reports what would change, `--check`
+   exits with code `6` when the committed classes are out of date. See the "Typed Schemas"
+   section of the readme.
+
+   A project which already runs the generator through a composer script can switch the script to
+   the command, the token then comes from the `.env` file instead of the shell:
+
+   ```diff
+    "scripts": {
+   -    "flyo:types": "vendor/bin/flyo-generate-types https://api.flyo.cloud/nitro/v1/openapi/schemas App/Flyo app/Flyo"
+   +    "flyo:types": "@php artisan flyo:types"
+    }
+   ```
+
+   Both write the same files, so classes generated before keep passing `--check`. A project which
+   defines a `flyo:types` artisan command of its own can remove it.
+
 ## 3.3 → 3.4
 
 **No breaking changes.** `composer update flyo/nitro-laravel` is enough, no code changes are
