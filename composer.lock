@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "ddba8b10be092c8413d2bf1938a93f6e",
+    "content-hash": "8913d43d20f0b0e2efeed0b76f364f2e",
     "packages": [
         {
             "name": "brick/math",
@@ -509,16 +509,16 @@
         },
         {
             "name": "flyo/nitro-php",
-            "version": "3.2",
+            "version": "3.6",
             "source": {
                 "type": "git",
                 "url": "https://github.com/flyocloud/nitro-php-sdk.git",
-                "reference": "4afaa2913ade0246e784420a920848d25aa741eb"
+                "reference": "3efbb973ec3e5c23e2859e6b5074cf59c49213c3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/flyocloud/nitro-php-sdk/zipball/4afaa2913ade0246e784420a920848d25aa741eb",
-                "reference": "4afaa2913ade0246e784420a920848d25aa741eb",
+                "url": "https://api.github.com/repos/flyocloud/nitro-php-sdk/zipball/3efbb973ec3e5c23e2859e6b5074cf59c49213c3",
+                "reference": "3efbb973ec3e5c23e2859e6b5074cf59c49213c3",
                 "shasum": ""
             },
             "require": {
@@ -533,6 +533,10 @@
                 "phpstan/phpstan": "^1.12",
                 "phpunit/phpunit": "^12"
             },
+            "bin": [
+                "bin/flyo-generate-types",
+                "bin/flyo-generate-blocks"
+            ],
             "type": "library",
             "autoload": {
                 "psr-4": {
@@ -552,9 +556,9 @@
             ],
             "support": {
                 "issues": "https://github.com/flyocloud/nitro-php-sdk/issues",
-                "source": "https://github.com/flyocloud/nitro-php-sdk/tree/3.2"
+                "source": "https://github.com/flyocloud/nitro-php-sdk/tree/3.6"
             },
-            "time": "2026-09-03T08:17:00+00:00"
+            "time": "2026-09-23T09:39:18+00:00"
         },
         {
             "name": "flyo/nitro-php-bridge",
