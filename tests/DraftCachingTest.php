@@ -77,6 +77,41 @@ class DraftCachingTest extends TestCase
         $this->assertSame('no-store', CachingHeaders::cdnCacheControl(0, 900));
     }
 
+    public function test_the_cache_headers_can_be_turned_off(): void
+    {
+        $response = $this->cachingHeaders(['cache_headers' => false]);
+
+        $this->assertNull($response->headers->get('CDN-Cache-Control'));
+        $this->assertNull($response->headers->get('Vercel-CDN-Cache-Control'));
+        $this->assertStringNotContainsString('max-age=1200', (string) $response->headers->get('Cache-Control'));
+    }
+
+    public function test_turned_off_cache_headers_keep_the_cache_headers_of_the_application(): void
+    {
+        $middleware = new CachingHeaders($this->config(['cache_headers' => false]));
+
+        $response = $middleware->handle(Request::create('/about'), function () {
+            $response = new Response('a page');
+            $response->headers->set('Cache-Control', 'no-store, private');
+
+            return $response;
+        });
+
+        $this->assertSame('no-store, private', $response->headers->get('Cache-Control'));
+        $this->assertNull($response->headers->get('CDN-Cache-Control'));
+    }
+
+    public function test_a_draft_response_is_not_cached_when_the_cache_headers_are_turned_off(): void
+    {
+        DraftMode::flag();
+
+        $response = $this->cachingHeaders(['cache_headers' => false]);
+
+        $this->assertSame('no-store', $response->headers->get('CDN-Cache-Control'));
+        $this->assertSame('no-store', $response->headers->get('Vercel-CDN-Cache-Control'));
+        $this->assertStringContainsString('no-store', (string) $response->headers->get('Cache-Control'));
+    }
+
     public function test_the_caching_middleware_does_not_cache_a_draft_response(): void
     {
         DraftMode::flag(1755000000);

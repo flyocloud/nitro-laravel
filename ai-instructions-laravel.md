@@ -143,9 +143,11 @@ return [
     'token' => env('FLYO_TOKEN', 'ADD_PRODUCTION_TOKEN_HERE'),
     'live_edit' => env('FLYO_LIVE_EDIT', false),
     'views_namespace' => 'flyo',
+    'cache_headers' => env('FLYO_CACHE_HEADERS', true),
     'server_cache_ttl' => env('FLYO_SERVER_CACHE_TTL', 900),
     'server_cache_stale_while_revalidate_ttl' => env('FLYO_SERVER_CACHE_STALE_WHILE_REVALIDATE_TTL', 450),
     'client_cache_ttl' => env('FLYO_CLIENT_CACHE_TTL', 1200),
+    'sitemap' => env('FLYO_SITEMAP', true),
     'default_route' => env('FLYO_DEFAULT_ROUTE', 'detail'),
     'locales' => [],
 ];
@@ -829,6 +831,8 @@ The locations are absolute urls built from the incoming request root, so there i
 
 Do **not** add a sitemap package for Flyo content, it does not see the CMS routes. If the project already serves a sitemap of its own at `/sitemap.xml`, only one of the two can win: tell the user and agree on which, or move the other one to a different path.
 
+The route is enabled by default. If the project should not serve the Flyo sitemap, turn it off with `'sitemap' => env('FLYO_SITEMAP', true)` in `config/flyo.php` (`FLYO_SITEMAP=false`), the package then registers no `/sitemap.xml` at all.
+
 ### 13. Cache headers
 
 `Flyo\Laravel\Middleware\CachingHeaders` is applied to the CMS page routes and the sitemap. It writes:
@@ -841,10 +845,11 @@ Vercel-CDN-Cache-Control: max-age={server_cache_ttl}, stale-while-revalidate={se
 
 The `stale-while-revalidate` window (default `450` seconds, half of the default `server_cache_ttl`) lets the edge answer from an already expired entry while a single background request refreshes it, instead of sending every visitor waiting on the url at the moment of the expiry through to the origin. The trade is that a page can be up to `server_cache_ttl + server_cache_stale_while_revalidate_ttl` seconds old, until that refresh finished. Set `server_cache_stale_while_revalidate_ttl` to `0` for plain `max-age` headers.
 
-Set `server_cache_ttl` or `client_cache_ttl` to `0` to opt out of that layer, a `server_cache_ttl` of `0` sends `no-store` to the edge and never carries a stale window. Either of two conditions switches the caching off entirely, which is worth knowing before debugging a "cache header is missing" report:
+Set `server_cache_ttl` or `client_cache_ttl` to `0` to opt out of that layer, a `server_cache_ttl` of `0` sends `no-store` to the edge and never carries a stale window. Any of three conditions switches the caching off entirely, which is worth knowing before debugging a "cache header is missing" report:
 
-- `flyo.live_edit` is enabled (the editor preview must never be cached), or
-- `APP_DEBUG` is on.
+- `flyo.live_edit` is enabled (the editor preview must never be cached),
+- `APP_DEBUG` is on, or
+- `flyo.cache_headers` is `false` (`FLYO_CACHE_HEADERS=false`), the switch for a project whose responses should not be cached by the client or a cdn at all. The middleware then writes none of the three headers and a response keeps the `Cache-Control` of the application (`no-cache, private` in Laravel unless something else writes one).
 
 A non successful response is not cached either.
 

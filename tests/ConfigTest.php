@@ -17,6 +17,14 @@ class ConfigTest extends TestCase
         $this->assertSame(LiveEdit::BRIDGE_URL, $config['live_edit_bridge_url']);
     }
 
+    public function test_the_sitemap_and_the_cache_headers_are_enabled_by_default(): void
+    {
+        $config = require __DIR__.'/../config/flyo.php';
+
+        $this->assertTrue($config['sitemap']);
+        $this->assertTrue($config['cache_headers']);
+    }
+
     public function test_the_config_and_the_cms_view_are_publishable(): void
     {
         $paths = SupportServiceProvider::pathsToPublish(ServiceProvider::class);

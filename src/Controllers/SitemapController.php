@@ -3,9 +3,12 @@
 namespace Flyo\Laravel\Controllers;
 
 use Flyo\Api\SitemapApi;
+use Flyo\Laravel\Middleware\CachingHeaders;
 use Flyo\Model\SitemapinterfaceInner;
+use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Route;
 
 /**
  * Renders the `sitemap.xml` of the integration.
@@ -17,6 +20,19 @@ use Illuminate\Http\Response;
 class SitemapController
 {
     public function __construct(protected Response $response, protected Request $request, protected SitemapApi $api) {}
+
+    /**
+     * Register the `/sitemap.xml` route unless the sitemap is turned off with the `flyo.sitemap`
+     * config. This is what [[ServiceProvider::boot()]] calls.
+     */
+    public static function boot(ConfigRepository $config): void
+    {
+        if (! $config->get('flyo.sitemap', true)) {
+            return;
+        }
+
+        Route::get('/sitemap.xml', [self::class, 'render'])->middleware(CachingHeaders::class);
+    }
 
     private function buildUrl(string $path): string
     {

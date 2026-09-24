@@ -1,5 +1,34 @@
 # Upgrade
 
+## 3.3 → 3.4
+
+**No breaking changes.** `composer update flyo/nitro-laravel` is enough, no code changes are
+required in a project. Both new options are enabled by default, which is the behavior of 3.3.
+
+### What's new
+
+1. **The sitemap can be turned off.** The package still registers `/sitemap.xml` by default, set
+   the new `flyo.sitemap` to `false` if the application should not serve that sitemap:
+
+   ```diff
+    // config/flyo.php
+   +'sitemap' => env('FLYO_SITEMAP', true),
+   ```
+
+2. **The cache headers can be turned off.** Set the new `flyo.cache_headers` to `false` and the
+   `CachingHeaders` middleware writes neither `Cache-Control` nor `CDN-Cache-Control` nor
+   `Vercel-CDN-Cache-Control`, a response keeps the `Cache-Control` header of the application
+   (`no-cache, private` in Laravel unless something else writes one). A response rendered from a
+   draft link is still sent with its no store headers.
+
+   ```diff
+    // config/flyo.php
+   +'cache_headers' => env('FLYO_CACHE_HEADERS', true),
+   ```
+
+A project which published `config/flyo.php` before does not have the two keys, both fall back to
+`true`, so republishing the config file is not required.
+
 ## 3.2 → 3.3
 
 **No breaking changes.** `composer update flyo/nitro-laravel` is enough, no code changes are
