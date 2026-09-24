@@ -33,6 +33,11 @@ class CachingHeaders
             return $response;
         }
 
+        // turned off, the response keeps whatever cache headers the application gave it
+        if (! $this->config->get('flyo.cache_headers', true)) {
+            return $response;
+        }
+
         if ($response->isSuccessful() && ! $isDebug && ! $isLiveEdit) {
             $cdnCacheControl = self::cdnCacheControl(
                 $this->seconds('flyo.server_cache_ttl', 1200),

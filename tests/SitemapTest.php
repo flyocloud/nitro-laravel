@@ -4,9 +4,12 @@ namespace Flyo\Laravel\Tests;
 
 use Flyo\Api\SitemapApi;
 use Flyo\Laravel\Controllers\SitemapController;
+use Flyo\Laravel\Middleware\CachingHeaders;
 use Flyo\Model\SitemapinterfaceInner;
+use Illuminate\Config\Repository;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Routing\Route;
 
 /**
  * The sitemap endpoint delivers its own model since flyo/nitro-php 3.0, it carries the resolved
@@ -77,6 +80,36 @@ class SitemapTest extends TestCase
         ]);
 
         $this->assertSame(1, substr_count($xml, '<loc>https://example.com/about</loc>'));
+    }
+
+    private function sitemapRoute(): ?Route
+    {
+        foreach ($this->app['router']->getRoutes()->getRoutes() as $route) {
+            if ($route->uri() === 'sitemap.xml') {
+                return $route;
+            }
+        }
+
+        return null;
+    }
+
+    public function test_the_sitemap_route_is_registered_by_default(): void
+    {
+        // a published config of a previous version does not have the key
+        SitemapController::boot(new Repository(['flyo' => []]));
+
+        $route = $this->sitemapRoute();
+
+        $this->assertNotNull($route);
+        $this->assertSame([SitemapController::class, 'render'], [$route->getControllerClass(), $route->getActionMethod()]);
+        $this->assertContains(CachingHeaders::class, $route->middleware());
+    }
+
+    public function test_the_sitemap_route_can_be_turned_off(): void
+    {
+        SitemapController::boot(new Repository(['flyo' => ['sitemap' => false]]));
+
+        $this->assertNull($this->sitemapRoute());
     }
 
     public function test_the_response_is_a_valid_xml_urlset(): void

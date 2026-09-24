@@ -93,7 +93,7 @@ class ServiceProvider extends SupportServiceProvider
             // rendered it lives, therefore the middleware is registered globally, see DraftMode.
             PreventDraftCaching::register($this->app);
 
-            Route::get('/sitemap.xml', [SitemapController::class, 'render'])->middleware(CachingHeaders::class);
+            SitemapController::boot($configRepository);
 
             Route::middleware('web')->group(function () use ($response, $config, $viewFactory) {
                 foreach ($response->getPages() as $page) {

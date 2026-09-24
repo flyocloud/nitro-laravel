@@ -19,6 +19,13 @@ return [
     // The namespace for the views, which means the views will be stored in resources/views/flyo.
     'views_namespace' => 'flyo',
 
+    // Whether the CachingHeaders middleware writes the cache headers configured below to the CMS
+    // page routes and the sitemap. Enabled by default, set it to false if the responses should not
+    // be cached by the client or a CDN, a response then keeps the Cache-Control header of the
+    // application, which is `no-cache, private` in Laravel unless something else writes one.
+    // A response rendered from a draft link is never cached either way, see Flyo\Laravel\DraftMode.
+    'cache_headers' => env('FLYO_CACHE_HEADERS', true),
+
     // TTL (Time-To-Live) for server-side cache headers, in seconds.
     // Default is 900 seconds (15 minutes) its only availble if the liveEdit is disabled. Use 0 to disable server caching.
     // will set Vercel-CDN-Cache-Control and CDN-Cache-Control headers
@@ -38,6 +45,11 @@ return [
     // Both TTLs are ignored for a response rendered from a draft link, such a response is never
     // cached, neither by the client nor by a CDN, see Flyo\Laravel\DraftMode.
     'client_cache_ttl' => env('FLYO_CLIENT_CACHE_TTL', 1200),
+
+    // Whether the package registers the /sitemap.xml route, which lists every page and entity the
+    // api resolved a url for. Enabled by default, set it to false if the application should not
+    // serve that sitemap, for example because it renders a sitemap of its own or none at all.
+    'sitemap' => env('FLYO_SITEMAP', true),
 
     // The default route to be used for the detail pages.
     // Routes/Links can be defined in the Flyo interface for each corresponding entity, the default name is 'detail'.

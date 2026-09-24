@@ -268,6 +268,20 @@ Flyo\Laravel\Components\Head::noIndex();
 Call it after `metaPage()` / `metaEntity()`, those assign the flag from the api response and would
 otherwise reset it.
 
+## Sitemap
+
+The package registers `/sitemap.xml`, which lists every page and entity the api resolved a url for,
+each with a `<lastmod>` from the timestamp of its last content change. The locations are absolute
+urls built from the incoming request root.
+
+The route is enabled by default. Turn it off with `sitemap` if the application should not serve that
+sitemap, for example because it renders a sitemap of its own at that path or none at all:
+
+```php
+// config/flyo.php
+'sitemap' => env('FLYO_SITEMAP', true),
+```
+
 ## Cache Headers
 
 `Flyo\Laravel\Middleware\CachingHeaders` is applied to the CMS page routes and the sitemap. It
@@ -301,6 +315,19 @@ of `0` sends `no-store` to the edge and never carries a stale window. Caching is
 entirely when `flyo.live_edit` is enabled or `APP_DEBUG` is on, and a non successful response is
 not cached either. `Flyo\Laravel\Middleware\CachingHeaders::cdnCacheControl($ttl, $staleTtl)`
 builds the value of the cdn headers, in case an application writes them somewhere else too.
+
+The cache headers are enabled by default. Turn them off with `cache_headers` if the responses should
+not be cached by the client or a cdn at all, the middleware then writes none of the three headers
+and a response keeps the `Cache-Control` header of the application, which is `no-cache, private` in
+Laravel unless something else writes one:
+
+```php
+// config/flyo.php
+'cache_headers' => env('FLYO_CACHE_HEADERS', true),
+```
+
+A response rendered from a draft link is still sent with its no store headers, see
+[Draft Links](#draft-links).
 
 Add the middleware to a hand written route which serves CMS content and should be cached the same way:
 
