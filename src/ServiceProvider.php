@@ -3,22 +3,17 @@
 namespace Flyo\Laravel;
 
 use Flyo\Api\ConfigApi;
-use Flyo\Api\PagesApi;
 use Flyo\Api\SitemapApi;
 use Flyo\Configuration;
-use Flyo\Laravel\Components\Head;
 use Flyo\Laravel\Console\TypesCommand;
 use Flyo\Laravel\Controllers\SitemapController;
-use Flyo\Laravel\Middleware\CachingHeaders;
 use Flyo\Laravel\Middleware\PreventDraftCaching;
 use Flyo\Model\ConfigResponse;
-use Flyo\Model\Page;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Contracts\View\Factory as ViewFactory;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider as SupportServiceProvider;
 use RuntimeException;
 
@@ -104,21 +99,8 @@ class ServiceProvider extends SupportServiceProvider
 
             SitemapController::boot($configRepository);
 
-            Route::middleware('web')->group(function () use ($response, $config, $viewFactory) {
-                foreach ($response->getPages() as $page) {
-                    Route::get($page, function () use ($page, $config, $viewFactory) {
-                        $pageResponse = (new PagesApi(null, $config))->page($page, App::getLocale());
-
-                        $this->app->singleton(Page::class, function () use ($pageResponse) {
-                            return $pageResponse;
-                        });
-
-                        Head::metaPage($pageResponse);
-
-                        return $viewFactory->make('cms', ['page' => $pageResponse]);
-                    })->middleware(CachingHeaders::class);
-                }
-            });
+            // A route per page of the config, with the middleware of flyo.page_middleware, see PageRoutes.
+            PageRoutes::boot($response->getPages() ?? [], $config, $configRepository, $viewFactory);
         }
     }
 }

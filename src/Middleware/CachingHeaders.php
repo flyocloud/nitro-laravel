@@ -5,13 +5,18 @@ namespace Flyo\Laravel\Middleware;
 use Flyo\Laravel\DraftMode;
 use Illuminate\Config\Repository;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\Support\Env;
+use Symfony\Component\HttpFoundation\Response;
 
 class CachingHeaders
 {
     public function __construct(protected Repository $config) {}
 
+    /**
+     * Typed against the Symfony response, so a redirect, a json or a streamed response of the route
+     * or of an inner middleware (see flyo.page_middleware) passes through. A redirect is not
+     * successful, so it is never given the cache headers.
+     */
     public function handle(Request $request, \Closure $next): Response
     {
         /** @var Response $response */
@@ -44,12 +49,12 @@ class CachingHeaders
                 $this->seconds('flyo.server_cache_stale_while_revalidate_ttl', 450),
             );
 
-            $response->header('Vercel-CDN-Cache-Control', $cdnCacheControl);
-            $response->header('CDN-Cache-Control', $cdnCacheControl);
+            $response->headers->set('Vercel-CDN-Cache-Control', $cdnCacheControl);
+            $response->headers->set('CDN-Cache-Control', $cdnCacheControl);
 
             $clientCacheTtl = $this->seconds('flyo.client_cache_ttl', 900);
             if ($clientCacheTtl > 0) {
-                $response->header('Cache-Control', 'max-age='.$clientCacheTtl);
+                $response->headers->set('Cache-Control', 'max-age='.$clientCacheTtl);
             }
         }
 

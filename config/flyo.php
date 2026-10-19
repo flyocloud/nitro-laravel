@@ -51,6 +51,38 @@ return [
     // serve that sitemap, for example because it renders a sitemap of its own or none at all.
     'sitemap' => env('FLYO_SITEMAP', true),
 
+    // Middleware for the CMS page routes only, the routes the package registers for every page of
+    // the Flyo config. They run after the `web` group and the CachingHeaders middleware, in the
+    // order listed, and before the page is loaded from the api, so a middleware which returns a
+    // redirect or an abort costs no api request. Hand written routes, like the entity detail pages,
+    // are not affected. Takes class names, aliases and parameters the same way ->middleware() does.
+    //
+    // Example: a page with children, but no content of its own, sends the visitor to its first
+    // child. The ConfigResponse holds the navigation, so no request is needed to find it:
+    //
+    //     // app/Http/Middleware/RedirectToFirstChild.php
+    //     public function handle(Request $request, Closure $next): Response
+    //     {
+    //         $path = trim($request->path(), '/');
+    //         $items = app(ConfigResponse::class)->getContainers()['navigation']?->getItems() ?? [];
+    //
+    //         foreach ($items as $item) {
+    //             $first = $item->getChildren()[0] ?? null;
+    //             if ($first && trim($item->getSlug(), '/') === $path) {
+    //                 return redirect($first->getHref()); // 302, editors can reorder the children
+    //             }
+    //         }
+    //
+    //         return $next($request);
+    //     }
+    //
+    //     // config/flyo.php
+    //     'page_middleware' => [
+    //         \App\Http\Middleware\RedirectToFirstChild::class,
+    //         'can:view-intranet',
+    //     ],
+    'page_middleware' => [],
+
     // The default route to be used for the detail pages.
     // Routes/Links can be defined in the Flyo interface for each corresponding entity, the default name is 'detail'.
     // Not used by the package itself, the sitemap uses the url the API resolved for an entity.
