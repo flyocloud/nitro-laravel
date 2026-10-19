@@ -329,6 +329,51 @@ sitemap, for example because it renders a sitemap of its own at that path or non
 'sitemap' => env('FLYO_SITEMAP', true),
 ```
 
+## Page Middleware
+
+The package registers a route for every page of the Flyo config. These routes are closures of the
+package, so an application adds behaviour to them through `page_middleware`: the listed middleware
+run on the CMS page routes only, after the `web` group and `CachingHeaders`, and before the page is
+loaded from the api. Hand written routes, like the entity detail pages, are not affected, so the
+middleware does not have to tell a CMS page apart from the rest of the application.
+
+```php
+// config/flyo.php
+'page_middleware' => [
+    \App\Http\Middleware\RedirectToFirstChild::class,
+    'can:view-intranet',
+],
+```
+
+A middleware which returns early (a redirect, an `abort()`) saves the api request of the page. The
+`Flyo\Model\ConfigResponse` with the navigation containers is already in the container at that
+point. For example, a page with children but no content of its own can send the visitor to its
+first child:
+
+```php
+class RedirectToFirstChild
+{
+    public function handle(Request $request, Closure $next): Response
+    {
+        $path = trim($request->path(), '/');
+        $items = app(ConfigResponse::class)->getContainers()['navigation']?->getItems() ?? [];
+
+        foreach ($items as $item) {
+            $first = $item->getChildren()[0] ?? null;
+            if ($first && trim($item->getSlug(), '/') === $path) {
+                // 302, not 301: editors can reorder the children at any time
+                return redirect($first->getHref());
+            }
+        }
+
+        return $next($request);
+    }
+}
+```
+
+Use a 302 for anything derived from the content, a permanent redirect stays in the browsers' cache
+after the editors changed the page tree.
+
 ## Cache Headers
 
 `Flyo\Laravel\Middleware\CachingHeaders` is applied to the CMS page routes and the sitemap. It

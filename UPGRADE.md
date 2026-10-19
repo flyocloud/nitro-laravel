@@ -1,5 +1,42 @@
 # Upgrade
 
+## 3.5 → 3.6
+
+**No breaking changes.** `composer update flyo/nitro-laravel` is enough, no code changes are
+required in a project. Without the new option the page routes carry the same middleware as in 3.5.
+
+### What's new
+
+1. **Middleware for the CMS page routes.** The new `flyo.page_middleware` adds middleware to the
+   routes the package registers for the pages of the Flyo config, and to nothing else. They run
+   after the `web` group and `CachingHeaders`, and before the page is loaded from the api, so a
+   redirect or an `abort()` costs no api request. See the "Page Middleware" section of the readme.
+
+   ```diff
+    // config/flyo.php
+   +'page_middleware' => [
+   +    \App\Http\Middleware\RedirectToFirstChild::class,
+   +],
+   ```
+
+   A project which published `config/flyo.php` before does not have the key, it falls back to
+   `[]`, so republishing the config file is not required.
+
+   A project which appended a middleware to the `web` group only to reach the CMS pages, and
+   checked inside it whether the request is for one of them (for example against
+   `ConfigResponse::getPages()`), can move it to `page_middleware` and drop that check.
+
+2. **The page routes are registered by `Flyo\Laravel\PageRoutes`.** The service provider calls
+   `PageRoutes::boot()` instead of registering the routes inline. The routes, their paths and the
+   `cms` view they render are unchanged. The loaded page is still bound as `Flyo\Model\Page` in the
+   container.
+
+3. **`CachingHeaders` passes every response through.** `handle()` now returns a
+   `Symfony\Component\HttpFoundation\Response` instead of an `Illuminate\Http\Response`. Before, a
+   redirect, json or streamed response behind the middleware ended in a `TypeError`, which a
+   redirecting page middleware would have run into. A class which extends `CachingHeaders` and
+   overrides `handle()` has to widen its return type the same way.
+
 ## 3.4 → 3.5
 
 **No breaking changes.** `composer update flyo/nitro-laravel` is enough, no code changes are
