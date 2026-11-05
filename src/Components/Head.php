@@ -7,6 +7,7 @@ use Flyo\Laravel\DraftMode;
 use Flyo\Model\Entity;
 use Flyo\Model\Page as PageModel;
 use Illuminate\Contracts\View\Factory;
+use Illuminate\Support\HtmlString;
 use Illuminate\View\Component;
 
 class Head extends Component
@@ -126,7 +127,7 @@ class Head extends Component
         self::noIndex(self::isNotIndexable($entity->getIsIndexable()));
 
         if (config('app.env') === 'production') {
-            self::script("fetch('{$entity->getEntity()->getEntityMetric()->getApi()}')");
+            self::script('fetch('.self::jsonForScript($entity->getEntity()->getEntityMetric()->getApi()).')');
         }
     }
 
@@ -146,31 +147,56 @@ class Head extends Component
         return $value;
     }
 
-    public function render(): string
+    /**
+     * Encodes a value as json which can be placed inside a script tag, everything which could close
+     * the tag or open a html comment is escaped.
+     */
+    private static function jsonForScript(mixed $value): string
+    {
+        return (string) json_encode($value, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+    }
+
+    /**
+     * Escapes a value for a html attribute or the title element.
+     *
+     * An already escaped value (like `e($title)` passed to metaTitle()) is not escaped a second time.
+     */
+    private static function escape(mixed $value): string
+    {
+        return e((string) $value, false);
+    }
+
+    /**
+     * The meta tags are returned as html string, a plain string returned by a component would be
+     * compiled as blade template by laravel.
+     */
+    public function render(): HtmlString
     {
         $html = '';
 
         if (self::$metas['title'] ?? false) {
-            $html .= '<title>'.self::$metas['title'].'</title>'.PHP_EOL;
-            $html .= '<meta property="og:title" content="'.self::$metas['title'].'">'.PHP_EOL;
-            $html .= '<meta name="twitter:title" content="'.self::$metas['title'].'">'.PHP_EOL;
+            $title = self::escape(self::$metas['title']);
+            $html .= '<title>'.$title.'</title>'.PHP_EOL;
+            $html .= '<meta property="og:title" content="'.$title.'">'.PHP_EOL;
+            $html .= '<meta name="twitter:title" content="'.$title.'">'.PHP_EOL;
         }
 
         if (self::$metas['description'] ?? false) {
-            $html .= '<meta name="description" content="'.self::$metas['description'].'">'.PHP_EOL;
-            $html .= '<meta property="og:description" content="'.self::$metas['description'].'">'.PHP_EOL;
-            $html .= '<meta name="twitter:description" content="'.self::$metas['description'].'">'.PHP_EOL;
+            $description = self::escape(self::$metas['description']);
+            $html .= '<meta name="description" content="'.$description.'">'.PHP_EOL;
+            $html .= '<meta property="og:description" content="'.$description.'">'.PHP_EOL;
+            $html .= '<meta name="twitter:description" content="'.$description.'">'.PHP_EOL;
         }
 
         if (self::$metas['image'] ?? false) {
-            $img = Image::source(self::$metas['image'], 1200, 630, 'jpg');
+            $img = self::escape(Image::source(self::$metas['image'], 1200, 630, 'jpg'));
             $html .= '<meta property="og:image" content="'.$img.'">'.PHP_EOL;
             $html .= '<meta name="twitter:image" content="'.$img.'">'.PHP_EOL;
             $html .= '<meta property="twitter:card" content="summary_large_image">'.PHP_EOL;
         }
 
         if (self::$metas['canonical'] ?? false) {
-            $html .= '<link rel="canonical" href="'.self::$metas['canonical'].'">'.PHP_EOL;
+            $html .= '<link rel="canonical" href="'.self::escape(self::$metas['canonical']).'">'.PHP_EOL;
         }
 
         if (self::$metas['noindex'] ?? false) {
@@ -180,29 +206,29 @@ class Head extends Component
         $appName = config('app.name', '');
 
         if (! empty($appName)) {
-            $html .= '<meta property="og:site_name" content="'.$appName.'">'.PHP_EOL;
+            $html .= '<meta property="og:site_name" content="'.self::escape($appName).'">'.PHP_EOL;
         }
 
         $currentAbsoluteUrl = url()->current();
 
         if (! empty($currentAbsoluteUrl)) {
-            $html .= '<meta property="og:url" content="'.$currentAbsoluteUrl.'">'.PHP_EOL;
+            $html .= '<meta property="og:url" content="'.self::escape($currentAbsoluteUrl).'">'.PHP_EOL;
         }
 
         if (count(self::$scripts) > 0) {
-            $html .= '<script>@verbatim';
+            $html .= '<script>';
             foreach (self::$scripts as $script) {
                 $html .= $script.PHP_EOL;
             }
-            $html .= '@endverbatim</script>';
+            $html .= '</script>';
         }
 
         if (count(self::$jsonLd) > 0) {
-            $html .= '<script type="application/ld+json">@verbatim';
-            $html .= json_encode(self::$jsonLd);
-            $html .= '@endverbatim</script>';
+            $html .= '<script type="application/ld+json">';
+            $html .= json_encode(self::$jsonLd, JSON_HEX_TAG);
+            $html .= '</script>';
         }
 
-        return $html;
+        return new HtmlString($html);
     }
 }
