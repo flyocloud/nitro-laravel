@@ -4,6 +4,7 @@ namespace Flyo\Laravel\Components;
 
 use Flyo\Model\Block as ModelBlock;
 use Illuminate\Config\Repository;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Env;
@@ -17,7 +18,7 @@ class Block extends Component
     /**
      * Plain strings are never returned, laravel would compile them as blade template.
      */
-    public function render(): View|HtmlString
+    public function render(): View|Htmlable
     {
         $viewFile = $this->configRepository->get('flyo.views_namespace', 'flyo').'.'.$this->block->getComponent();
 
