@@ -26,9 +26,11 @@ return [
     // A response rendered from a draft link is never cached either way, see Flyo\Laravel\DraftMode.
     'cache_headers' => env('FLYO_CACHE_HEADERS', true),
 
-    // TTL (Time-To-Live) for server-side cache headers, in seconds.
-    // Default is 900 seconds (15 minutes) its only availble if the liveEdit is disabled. Use 0 to disable server caching.
-    // will set Vercel-CDN-Cache-Control and CDN-Cache-Control headers
+    // TTL (Time-To-Live) for the server-side (CDN) cache headers, in seconds, written as max-age of
+    // the Vercel-CDN-Cache-Control and CDN-Cache-Control headers. Default is 900 seconds (15 minutes),
+    // the CachingHeaders middleware falls back to the same value when the key is missing.
+    // Use 0 to disable server caching, the CDN headers then send no-store.
+    // Only applied while live_edit and APP_DEBUG are disabled.
     'server_cache_ttl' => env('FLYO_SERVER_CACHE_TTL', 900),
 
     // The window in which a CDN may answer from an already expired cache entry while it refreshes
@@ -39,9 +41,11 @@ return [
     // old, but only until that background refresh has finished. Use 0 to disable the window.
     'server_cache_stale_while_revalidate_ttl' => env('FLYO_SERVER_CACHE_STALE_WHILE_REVALIDATE_TTL', 450),
 
-    // The TTL for client-side cache headers, in seconds.
-    // Default is 1200 seconds (20 minutes) its only availble if the liveEdit is disabled. Use 0 to disable client caching.
-    // will set Cache-Control header
+    // TTL (Time-To-Live) for the client-side (browser) cache header, in seconds, written as max-age
+    // of the Cache-Control header. Default is 1200 seconds (20 minutes), the CachingHeaders
+    // middleware falls back to the same value when the key is missing.
+    // Use 0 to disable client caching, the response then keeps the Cache-Control header of the
+    // application. Only applied while live_edit and APP_DEBUG are disabled.
     // Both TTLs are ignored for a response rendered from a draft link, such a response is never
     // cached, neither by the client nor by a CDN, see Flyo\Laravel\DraftMode.
     'client_cache_ttl' => env('FLYO_CLIENT_CACHE_TTL', 1200),

@@ -77,6 +77,44 @@ class DraftCachingTest extends TestCase
         $this->assertSame('no-store', CachingHeaders::cdnCacheControl(0, 900));
     }
 
+    public function test_a_config_without_the_ttl_keys_gets_the_documented_defaults(): void
+    {
+        // the package does not merge its config into the application, a project whose published
+        // config/flyo.php does not have the ttl keys runs on the fallbacks of the middleware
+        $middleware = new CachingHeaders(new Repository(['flyo' => []]));
+
+        $response = $middleware->handle(Request::create('/about'), fn () => new Response('a page'));
+
+        $this->assertSame('max-age=900, stale-while-revalidate=450', $response->headers->get('CDN-Cache-Control'));
+        $this->assertSame('max-age=900, stale-while-revalidate=450', $response->headers->get('Vercel-CDN-Cache-Control'));
+        $this->assertStringContainsString('max-age=1200', (string) $response->headers->get('Cache-Control'));
+    }
+
+    public function test_the_fallbacks_of_the_middleware_are_the_defaults_of_the_shipped_config(): void
+    {
+        $shipped = require __DIR__.'/../config/flyo.php';
+        $ttls = array_intersect_key($shipped, array_flip([
+            'server_cache_ttl',
+            'server_cache_stale_while_revalidate_ttl',
+            'client_cache_ttl',
+        ]));
+
+        $this->assertCount(3, $ttls);
+
+        $headers = function (array $flyo): array {
+            $middleware = new CachingHeaders(new Repository(['flyo' => $flyo]));
+            $response = $middleware->handle(Request::create('/about'), fn () => new Response('a page'));
+
+            return [
+                $response->headers->get('Cache-Control'),
+                $response->headers->get('CDN-Cache-Control'),
+                $response->headers->get('Vercel-CDN-Cache-Control'),
+            ];
+        };
+
+        $this->assertSame($headers($ttls), $headers([]));
+    }
+
     public function test_the_cache_headers_can_be_turned_off(): void
     {
         $response = $this->cachingHeaders(['cache_headers' => false]);

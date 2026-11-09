@@ -43,16 +43,18 @@ class CachingHeaders
             return $response;
         }
 
+        // the fallbacks are the defaults of config/flyo.php, they apply to a project whose published
+        // config file does not have the keys, because the package does not merge its config
         if ($response->isSuccessful() && ! $isDebug && ! $isLiveEdit) {
             $cdnCacheControl = self::cdnCacheControl(
-                $this->seconds('flyo.server_cache_ttl', 1200),
+                $this->seconds('flyo.server_cache_ttl', 900),
                 $this->seconds('flyo.server_cache_stale_while_revalidate_ttl', 450),
             );
 
             $response->headers->set('Vercel-CDN-Cache-Control', $cdnCacheControl);
             $response->headers->set('CDN-Cache-Control', $cdnCacheControl);
 
-            $clientCacheTtl = $this->seconds('flyo.client_cache_ttl', 900);
+            $clientCacheTtl = $this->seconds('flyo.client_cache_ttl', 1200);
             if ($clientCacheTtl > 0) {
                 $response->headers->set('Cache-Control', 'max-age='.$clientCacheTtl);
             }
