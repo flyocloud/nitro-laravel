@@ -22,8 +22,9 @@ class SitemapController
     public function __construct(protected Response $response, protected Request $request, protected SitemapApi $api) {}
 
     /**
-     * Register the `/sitemap.xml` route unless the sitemap is turned off with the `flyo.sitemap`
-     * config. This is what [[ServiceProvider::boot()]] calls.
+     * Register the `/sitemap.xml` route, named `flyo.sitemap`, unless the sitemap is turned off with
+     * the `flyo.sitemap` config. This is what [[ServiceProvider::boot()]] calls, on the command line
+     * as well, so `php artisan route:cache` contains the route.
      */
     public static function boot(ConfigRepository $config): void
     {
@@ -31,7 +32,7 @@ class SitemapController
             return;
         }
 
-        Route::get('/sitemap.xml', [self::class, 'render'])->middleware(CachingHeaders::class);
+        Route::get('/sitemap.xml', [self::class, 'render'])->middleware(CachingHeaders::class)->name('flyo.sitemap');
     }
 
     private function buildUrl(string $path): string

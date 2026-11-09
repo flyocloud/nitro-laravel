@@ -51,20 +51,30 @@ return [
     // serve that sitemap, for example because it renders a sitemap of its own or none at all.
     'sitemap' => env('FLYO_SITEMAP', true),
 
-    // Middleware for the CMS page routes only, the routes the package registers for every page of
-    // the Flyo config. They run after the `web` group and the CachingHeaders middleware, in the
-    // order listed, and before the page is loaded from the api, so a middleware which returns a
-    // redirect or an abort costs no api request. Hand written routes, like the entity detail pages,
-    // are not affected. Takes class names, aliases and parameters the same way ->middleware() does.
+    // Whether the package registers the fallback route which serves the CMS pages. Laravel tries a
+    // fallback route after all other routes, so every route of the application wins over a CMS page.
+    // Set it to false if the application has a Route::fallback() of its own (only one can exist) and
+    // call Flyo\Laravel\PageRoutes::dispatch($request) from it, see the "Own fallback route" section
+    // of the readme.
+    'page_fallback' => true,
+
+    // Middleware for the CMS pages only. They run after the `web` group and the CachingHeaders
+    // middleware, in the order listed, and before the page is loaded from the api, so a middleware
+    // which returns a redirect or an abort costs no api request. For an url which is not a CMS page
+    // they do not run at all, a guest gets a 404 there, not the login. Hand written routes, like the
+    // entity detail pages, are not affected. Takes class names, aliases and parameters the same way
+    // ->middleware() does. Run `php artisan route:cache` again after a change, if you cache routes.
     //
     // Example: a page with children, but no content of its own, sends the visitor to its first
     // child. The ConfigResponse holds the navigation, so no request is needed to find it:
     //
     //     // app/Http/Middleware/RedirectToFirstChild.php
+    //     public function __construct(protected ConfigResponse $config) {}
+    //
     //     public function handle(Request $request, Closure $next): Response
     //     {
     //         $path = trim($request->path(), '/');
-    //         $items = app(ConfigResponse::class)->getContainers()['navigation']?->getItems() ?? [];
+    //         $items = $this->config->getContainers()['navigation']?->getItems() ?? [];
     //
     //         foreach ($items as $item) {
     //             $first = $item->getChildren()[0] ?? null;
