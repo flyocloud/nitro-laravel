@@ -1,38 +1,286 @@
 # Upgrade
 
-## 3.6.1 → 3.6.2
+## 3.6 → 4.0
 
-**No breaking changes.** `composer update flyo/nitro-laravel` is enough, no code changes are
-required in a project. Only a project whose `config/flyo.php` has no `server_cache_ttl` or no
-`client_cache_ttl` key gets different cache headers.
+**A major release, routing changed.** Until 3.x the package asked the Flyo api for the config while
+booting, on every single request, and registered a route for every CMS page. 4.0 serves all CMS
+pages through one route and loads the config only when something reads it.
 
-### Behavior notes
+### Highlights
 
-- **The ttl fallbacks of `CachingHeaders` are the documented defaults.** The package does not merge
-  its config into the application, so a project whose published `config/flyo.php` lacks one of the
-  two keys (published before they existed, or removed them) runs on the fallbacks of the
-  middleware. Those were swapped compared to `config/flyo.php` and the readme, `1200` seconds for
-  the cdn and `900` for the browser. They are now `900` and `1200`:
+- **Faster requests which are not a page.** The config is loaded at most once per request, and only
+  when something reads it. Json endpoints, redirects, form posts, file downloads, image proxies and
+  `/up` no longer wait for the Flyo api. A page with a layout loads it once, as before.
+- **`$config` costs nothing until a view reads it.** It is a lazy object (PHP 8.4): partials, mails
+  and Livewire updates which do not use `$config` load nothing. No setting needed, your views stay
+  as they are.
+- **Route caching works.** `php artisan route:cache` and `php artisan optimize` can be part of the
+  deploy now, see [Route caching](#route-caching). Until 3.x they removed every CMS page.
+- **A Flyo outage no longer takes the whole application down.** Only the requests which need the
+  config fail.
+- **Octane and other long running workers** load the config for every request, the list of pages is
+  never out of date.
+- **One route for all CMS pages.** Every route of the application wins over a CMS page. New for
+  special cases: the option `page_fallback`, `PageRoutes::dispatch()` and `PageRoutes::find()` for an
+  own fallback route, and the route names `flyo.page` and `flyo.sitemap`.
+
+### Requirements
+
+- **PHP 8.4** or newer, for the lazy objects.
+- **Laravel 12 or 13.** Laravel 11 is no longer supported, it is end of life and Composer refuses to
+  install it because of open security advisories.
+- `flyo/nitro-php-bridge` 1.2.1 or newer, Composer pulls it.
+
+### Upgrade
+
+```sh
+composer require flyo/nitro-laravel:^4.0
+```
+
+For most projects that is all it takes. Go through the checklist to be sure, it takes a few minutes.
+A published `config/flyo.php` does not have to be published again, the new key `page_fallback`
+falls back to its default.
+
+0. **Still on PHP 8.3 or Laravel 11?** Move the server to PHP 8.4 and the project to Laravel 12
+   first, while it is still on 3.6 of this package, which supports both. See
+   [From Laravel 11](#from-laravel-11).
+
+1. **Does `routes/web.php` contain a `Route::fallback()`?** Then it replaces the route of all CMS
+   pages, see [Own fallback route](#own-fallback-route). The package tells you: outside of
+   production a request fails with an explanation, in production it is logged.
+
+   ```sh
+   grep -rn "Route::fallback" routes app
+   ```
+
+2. **Is there a route with a parameter in the first segment, like `/{slug}`, `/{any}` or
+   `/{category}/{slug}`?** It now wins over the CMS pages, see
+   [Wildcard routes](#wildcard-routes).
+
+   ```sh
+   php artisan route:list
+   ```
+
+3. **Does code look at the route of a CMS page?** Search for `route()->uri()`, `Route::current()`,
+   `Route::getRoutes()` and `Route::has(`, see [Breaking changes](#breaking-changes) 3.
+
+4. **Optional: cache the routes,** see [Route caching](#route-caching).
+
+### Test after the upgrade
+
+- The home page and a few CMS pages, a nested one as well.
+- An url which does not exist shows your 404 page.
+- An entity detail page, a draft link and live edit in the Flyo editor.
+- `/sitemap.xml`.
+- The routes of your application, especially the ones with parameters (see checklist 2).
+- With route caching: the same once more after a deploy with `php artisan route:cache`.
+
+### Route caching
+
+New with 4.0. Add it to the deploy, after `composer install`:
+
+```sh
+php artisan route:cache
+# or, caching config, routes, views and events in one go
+php artisan optimize
+```
+
+- The cache contains the route of the CMS pages and `/sitemap.xml`. Building it needs neither
+  `FLYO_TOKEN` nor the Flyo api, so it also works in a build step without network.
+- **Pages added or renamed in Flyo need no new cache.** The pages are checked against the config of
+  the api on every request, the cache only holds the one route which serves them all.
+- Like every route cache, it freezes the middleware: run `php artisan route:cache` again after
+  changing `page_middleware`, `sitemap` or `page_fallback` in `config/flyo.php`. A deploy which
+  caches the routes does that anyway.
+- `php artisan route:clear` removes the cache again.
+
+### Own fallback route
+
+Laravel has room for one `Route::fallback()`. The package registers it now, a fallback of the
+application loads later and replaces it, and then every CMS page ends up in the fallback of the
+application.
+
+**The fallback only renders a custom 404 page:** remove it and move the page to
+`resources/views/errors/404.blade.php`. Laravel renders that view for every unknown url, with your
+layout and `$config` if you like.
+
+```diff
+ // routes/web.php
+-Route::fallback(fn () => response()->view('not-found', [], 404));
+```
+
+**The fallback does more** (redirects of old urls, a proxy, a search): turn the fallback of the
+package off and hand the CMS pages over from yours with `PageRoutes::dispatch()`. It runs the same
+page check, `page_middleware` and cache headers as the route of the package:
+
+```diff
+ // config/flyo.php
++'page_fallback' => false,
+```
+
+```diff
+ // routes/web.php
++use Flyo\Laravel\PageRoutes;
+
+ Route::fallback(function (Request $request) {
+     if ($target = LegacyRedirects::for($request->path())) {
+         return redirect($target, 301);
+     }
+
+-    abort(404);
++    return PageRoutes::dispatch($request);
+ });
+```
+
+`PageRoutes::find($request)` returns the path of the CMS page the request points to, or `null`, if
+your fallback has to decide first.
+
+### From Laravel 11
+
+Laravel 12 is a small release, follow the [official upgrade guide](https://laravel.com/docs/12.x/upgrade)
+and bump the framework while the project is still on 3.6 of this package:
+
+```sh
+composer require laravel/framework:^12.0 --with-all-dependencies
+```
+
+Check that the site works, then update to 4.0. Of the changes in Laravel 12, these can touch a Flyo
+project:
+
+- **Carbon 3 is required** (Laravel 11 also allowed Carbon 2). `Carbon::createFromTimestamp()` now
+  creates the date in UTC instead of the timezone of the application. Flyo delivers its dates as unix
+  timestamps (`draftExpiresAt`, `updated_at`, date fields of entities), so pass the timezone where
+  you format one:
 
   ```diff
-  -Cache-Control: max-age=900
-  -CDN-Cache-Control: max-age=1200, stale-while-revalidate=450
-  -Vercel-CDN-Cache-Control: max-age=1200, stale-while-revalidate=450
-  +Cache-Control: max-age=1200
-  +CDN-Cache-Control: max-age=900, stale-while-revalidate=450
-  +Vercel-CDN-Cache-Control: max-age=900, stale-while-revalidate=450
+  -Carbon::createFromTimestamp($draftExpiresAt)->format('d.m.Y H:i')
+  +Carbon::createFromTimestamp($draftExpiresAt, config('app.timezone'))->format('d.m.Y H:i')
   ```
 
-  A missing key only changes its own header, a key which is set, to any value, is not affected. To
-  keep the previous headers, add the keys with the old values (which also makes the
-  `FLYO_SERVER_CACHE_TTL` and `FLYO_CLIENT_CACHE_TTL` env variables work, they are only read
-  there):
+  `diffForHumans()` is not affected. `diffInDays()` and the other `diffIn*()` methods return a float
+  now, and a negative number for a date in the past. `<x-flyo::debug-info />` already passes the
+  timezone.
 
-  ```php
-  // config/flyo.php
-  'server_cache_ttl' => env('FLYO_SERVER_CACHE_TTL', 1200),
-  'client_cache_ttl' => env('FLYO_CLIENT_CACHE_TTL', 900),
-  ```
+- **A constructor parameter with a default value gets that default** when nothing is bound in the
+  container, Laravel 11 created an empty object instead. `?Flyo\Model\Page $page = null` in a
+  component is now `null` on a page which is not a CMS page (until then an empty page), the same holds
+  for `ConfigResponse` and `Configuration` in a queue job or an artisan command. Check such
+  parameters for `null`, or leave the default away where the binding always exists.
+
+- **The tests run on PHPUnit 11 or 12.** Nothing in this package depends on it.
+
+### Wildcard routes
+
+Until 3.x a CMS page won over a route like `Route::get('/{slug}', ...)`, because the page routes were
+registered first. In 4.0 every route of the application wins, so such a route now catches the CMS
+pages as well. Narrow it to what it really serves:
+
+```diff
+-Route::get('/{slug}', [NewsController::class, 'show']);
++Route::get('/news/{slug}', [NewsController::class, 'show']);
++// or
++Route::get('/{slug}', [NewsController::class, 'show'])->where('slug', 'news-[0-9]+');
+```
+
+A route with exactly the path of a CMS page (`/kontakt`) won over the page in 3.x already, nothing
+changes there.
+
+### Breaking changes
+
+1. **A `Route::fallback()` of the application replaces the route of the CMS pages.** See
+   [Own fallback route](#own-fallback-route).
+
+2. **Wildcard routes win over CMS pages.** See [Wildcard routes](#wildcard-routes).
+
+3. **CMS pages are no longer routes of their own.** All of them share one route: `route:list`,
+   `Route::has()` and `Route::getRoutes()` no longer list single pages, and
+   `request()->route()->uri()` is `{fallbackPlaceholder}` on every page. Monitoring which groups by
+   route (Sentry, Nightwatch, Pulse, Telescope) shows all CMS pages as one entry. Read the path from
+   `request()->path()` instead, and tell a CMS page apart with:
+
+   ```php
+   request()->routeIs('flyo.page');
+   request()->attributes->get('flyo.page'); // the path of the page, as the config delivers it
+   ```
+
+4. **Other methods on an unknown url answer with 405 instead of 404.** `POST`, `PUT`, `PATCH` and
+   `DELETE` get `405 Method Not Allowed`, `OPTIONS` gets `200` with an `Allow` header. Laravel does
+   this for every application with a route which matches every path. Adjust monitoring or firewall
+   rules which count 404s, if any.
+
+5. **`$config` in the views is a lazy object.** It is still shared with every view and is a
+   `Flyo\Model\ConfigResponse` for every type check, but it loads the config only when a view reads
+   it. Nothing has to change in your views. The only difference: it is not the same object as
+   `app(\Flyo\Model\ConfigResponse::class)`, so compare the two with `==`, not `===`, if you ever
+   do.
+
+6. **A Flyo outage only fails the requests which need the config.** Until 3.x every request failed
+   with a 500, so an uptime check of `/up` noticed it. Monitor a CMS page if you want to know. If
+   your error page renders the layout with `$config`, Laravel falls back to its plain error page
+   while Flyo is down. A missing token still fails every request, as before.
+
+7. **The config is loaded in the locale which is set when it is first needed.** Until 3.x it was
+   the locale of the first url segment (with more than one `flyo.locales`), at boot. That detection
+   is unchanged and still happens at boot, so nothing changes unless your application sets the
+   locale itself, in a middleware for example. A CMS page loads the config right after the global
+   middleware, before the `web` group.
+
+8. **`PageRoutes::boot()` is removed.** The package registers its route itself.
+   `PageRoutes::middleware()` is unchanged.
+
+9. **The route exists in tests and on the command line.** An unknown url in a test of your
+   application now passes the page check of the package and still answers with a 404, without a
+   request to the api. `/sitemap.xml` is a route in tests as well. See the "Testing" section of the
+   readme to render a CMS page in a test.
+
+10. **Octane and other long running workers load the config for every request.** Until 3.x it was
+    loaded once per worker, including the list of pages, which therefore went out of date.
+
+11. **The route cache contains the page middleware.** If you cache routes, run
+    `php artisan route:cache` again after changing `page_middleware`, `sitemap` or `page_fallback`.
+
+12. **PHP 8.4 and Laravel 12 or 13 are required.** See [Requirements](#requirements).
+
+13. **The ttl fallbacks of `CachingHeaders` are the documented defaults.** Only a project whose
+    published `config/flyo.php` has no `server_cache_ttl` or no `client_cache_ttl` key is affected,
+    the package does not merge its config into the application. The middleware fell back to `1200`
+    seconds for the cdn and `900` for the browser, the reverse of `config/flyo.php` and the readme.
+    It now falls back to `900` and `1200`:
+
+    ```diff
+    -Cache-Control: max-age=900
+    -CDN-Cache-Control: max-age=1200, stale-while-revalidate=450
+    -Vercel-CDN-Cache-Control: max-age=1200, stale-while-revalidate=450
+    +Cache-Control: max-age=1200
+    +CDN-Cache-Control: max-age=900, stale-while-revalidate=450
+    +Vercel-CDN-Cache-Control: max-age=900, stale-while-revalidate=450
+    ```
+
+    A missing key only changes its own header, a key which is set, to any value, is not affected.
+    To keep the previous headers, add the keys with the old values. That also makes the
+    `FLYO_SERVER_CACHE_TTL` and `FLYO_CLIENT_CACHE_TTL` env variables work, they are only read
+    there:
+
+    ```php
+    // config/flyo.php
+    'server_cache_ttl' => env('FLYO_SERVER_CACHE_TTL', 1200),
+    'client_cache_ttl' => env('FLYO_CLIENT_CACHE_TTL', 900),
+    ```
+
+### Unchanged
+
+- The `cms` view, the `Flyo\Model\Page` binding, the meta data of the head component.
+- The `page_middleware` and their order, after the `web` group and `CachingHeaders`. They still run
+  for CMS pages only: the page check comes first, so `auth` does not send a guest to the login for
+  an unknown url and `throttle` does not count it.
+- An unknown url still answers a `GET` request with a 404 before a session is started.
+- Cache headers, unless `config/flyo.php` lacks a ttl key, see
+  [Breaking changes](#breaking-changes) 13. Draft links, live edit, the sitemap content and
+  `EntityController`.
+- `Flyo\Configuration` is bound on every request, `new EntitiesApi()` without a configuration keeps
+  working.
+- Upper and lower case, trailing slashes, url encoded paths and `HEAD` requests match a CMS page
+  the same way as before.
 
 ## 3.5 → 3.6
 

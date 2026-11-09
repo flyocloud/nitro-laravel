@@ -10,14 +10,15 @@ Repository and documentation:
 
 ## Important constraints
 
-The package requires **PHP 8.3+** and **Laravel 11, 12 or 13**, and it renders with **Blade**. If the project is on an older Laravel or PHP, stop and say so instead of installing: `composer require` would fail on the platform requirements anyway.
+The package requires **PHP 8.4+** and **Laravel 12 or 13**, and it renders with **Blade**. If the project is on an older Laravel or PHP, stop and say so instead of installing (a Laravel 11 project upgrades to Laravel 12 first, see UPGRADE.md of the package): `composer require` would fail on the platform requirements anyway.
 
-The integration is **server rendered on every request**. The service provider asks the Flyo API for the site configuration during `boot()` and registers one route per CMS page from that response. There is no build step, no static export and no generated route file. Two things follow from that:
+The integration is **server rendered on every request**. There is no build step, no static export and no generated route file. The package (version 4 or newer) serves every CMS page through **one fallback route** named `flyo.page`, which Laravel tries after all other routes. Whether a path is a CMS page is decided per request against the site configuration of the Flyo API, which is loaded at most once per request and only when something needs it. Three things follow from that:
 
-- The CMS routes exist only in an HTTP request context. The provider skips all of this when `runningInConsole()` is true, so `php artisan route:list` does **not** show the CMS pages. That is expected and not a broken setup, but it also means `php artisan route:cache` must not be used (see the routing step).
-- Every request performs a config API call before the page is rendered. Keep the cache headers configured (see the caching step) and never ship a develop token to production.
+- **Every route of the application wins over a CMS page**, including a wildcard like `/{slug}` (see the routing step).
+- `php artisan route:list` shows the single `{fallbackPlaceholder}` route `flyo.page` for all CMS pages, not one route per page. That is expected. `php artisan route:cache` is supported.
+- A request which renders a CMS page or a layout with `$config` performs one config API call. Keep the cache headers configured (see the caching step) and never ship a develop token to production.
 
-Before changing files, check `routes/web.php`. A default `Route::get('/', ...)` welcome route, and any other route whose uri is identical to a CMS page slug, has to go: it replaces the CMS route of that path and the Flyo page becomes unreachable (see the routing step, a route which only overlaps by pattern behaves the other way round). Ask the user before deleting a route which looks intentional.
+Before changing files, check `routes/web.php`. A default `Route::get('/', ...)` welcome route, any other route whose uri is identical to a CMS page slug and any wildcard route like `/{slug}` without a prefix hide CMS pages, and a `Route::fallback()` hides all of them (see the routing step). Ask the user before deleting or narrowing a route which looks intentional.
 
 Laravel conventions this advisory follows:
 
@@ -173,22 +174,19 @@ Route::get('/', function () {
 
 Keep everything the application really needs (auth routes, api endpoints, entity detail routes). Only page paths which Flyo serves have to be free.
 
-**Which route wins depends on how the two collide, and both cases bite.** The package registers the CMS routes while the service providers boot, and Laravel loads `routes/web.php` afterwards, in a `booted` callback. From that:
+**The rule is simple: every route of the application wins over a CMS page.** The CMS pages are served by a fallback route, and Laravel tries a fallback route only when no other route matches. From that:
 
-- **Same uri**, for example `/` in `routes/web.php` and the Flyo home page. The route collection is keyed by method and uri, so the later registration *replaces* the earlier one: the hand written route wins and the CMS page of that path is unreachable. This is the collision to clean up.
-- **Overlapping pattern**, for example a catch-all or a `/{slug}` route in `routes/web.php` next to concrete CMS page paths. Here the router returns the first registered match, which is the CMS route. A wildcard in `routes/web.php` therefore never sees a path Flyo serves, and it stays reachable only for the paths Flyo does not.
+- **Same uri**, for example `/` in `routes/web.php` and the Flyo home page. The hand written route wins and the CMS page of that path is unreachable. This is the collision to clean up.
+- **Overlapping pattern**, for example `/{slug}` or `/{any}` with `where('any', '.*')`. The wildcard matches the CMS page paths as well and wins. Give it a prefix (`/news/{slug}`) or restrict it with `where()` to what it really serves, for example `->where('slug', 'news-[0-9]+')`.
+- **`Route::fallback()`**. Laravel has room for one fallback route, a fallback in `routes/web.php` replaces the one of the package and swallows every CMS page. The package reports it (an exception outside of production, a log entry in production). If the fallback only renders a custom 404 page, remove it and create `resources/views/errors/404.blade.php` instead. If it does more, set `'page_fallback' => false` in `config/flyo.php` and end the fallback with `return \Flyo\Laravel\PageRoutes::dispatch($request);`.
 
-So a leftover welcome route does shadow the Flyo homepage, while a hand written wildcard silently loses to the CMS pages. Check which of the two you are looking at before blaming a route.
+An url which is neither a route nor a CMS page answers with a 404 and renders `resources/views/errors/404.blade.php`, which can use the project layout and `$config`.
 
-**Do not run `php artisan route:cache` on a project using this package.** The CMS routes only exist inside an HTTP request, so a console run never sees them, and loading a cached route file replaces the whole route collection at runtime, which drops the CMS routes that were just registered. Remove the command from deploy scripts and CI (`config:cache`, `view:cache` and `event:cache` are fine), and if the project has cached routes already, clear them:
-
-```sh
-php artisan route:clear
-```
+`php artisan route:cache` is supported, the CMS route and `/sitemap.xml` are part of the cache and caching needs neither the token nor the API. Run it again after changing `page_middleware`, `sitemap` or `page_fallback`.
 
 ### 4. Create neutral layout `Header` and `Footer` components
 
-The service provider shares the Flyo config response with every view as `$config`, so the components need no props. Use the container identifiers the user gave you.
+Every view gets the Flyo config response as `$config` (a lazy object, the config is loaded when a view first reads it), so the components need no props. Use the container identifiers the user gave you.
 
 Create `resources/views/components/layout/header.blade.php`:
 
@@ -307,7 +305,7 @@ Head::metaDescription('How to reach us.');
 
 ### 6. Wire the CMS entry view
 
-`resources/views/cms.blade.php` is the view every CMS page route renders. The published version has the layout commented out, wrap it in the project layout:
+`resources/views/cms.blade.php` is the view every CMS page renders. The published version has the layout commented out, wrap it in the project layout:
 
 ```blade
 <?php
@@ -327,7 +325,7 @@ The page response itself is available as `$page` here and resolvable anywhere in
 $page = app(\Flyo\Model\Page::class);
 ```
 
-It carries `getTitle()`, `getHref()`, `getSlug()`, `getJson()` (the blocks), `getIsHome()`, `getProperties()`, `getBreadcrumb()`, `getTranslation()` and `getMetaJson()`. The binding only exists on a CMS page route, so guard it elsewhere with `app()->bound(\Flyo\Model\Page::class)`.
+It carries `getTitle()`, `getHref()`, `getSlug()`, `getJson()` (the blocks), `getIsHome()`, `getProperties()`, `getBreadcrumb()`, `getTranslation()` and `getMetaJson()`. The binding only exists on a CMS page, so guard it elsewhere with `app()->bound(\Flyo\Model\Page::class)`.
 
 ### 7. Prepare a project WYSIWYG wrapper
 
@@ -829,13 +827,13 @@ X-Robots-Tag: noindex, nofollow
 
 The locations are absolute urls built from the incoming request root, so there is no `site` setting to configure, but a site behind a proxy needs Laravel's trusted proxy handling (see the token step) to get the right scheme and host.
 
-Do **not** add a sitemap package for Flyo content, it does not see the CMS routes. If the project already serves a sitemap of its own at `/sitemap.xml`, only one of the two can win: tell the user and agree on which, or move the other one to a different path.
+Do **not** add a sitemap package for Flyo content, it does not know the CMS pages. If the project already serves a sitemap of its own at `/sitemap.xml`, only one of the two can win: tell the user and agree on which, or move the other one to a different path.
 
 The route is enabled by default. If the project should not serve the Flyo sitemap, turn it off with `'sitemap' => env('FLYO_SITEMAP', true)` in `config/flyo.php` (`FLYO_SITEMAP=false`), the package then registers no `/sitemap.xml` at all.
 
 ### 13. Cache headers
 
-`Flyo\Laravel\Middleware\CachingHeaders` is applied to the CMS page routes and the sitemap. It writes:
+`Flyo\Laravel\Middleware\CachingHeaders` is applied to the CMS pages and the sitemap. It writes:
 
 ```
 Cache-Control: max-age={client_cache_ttl}                 # the browser
@@ -902,7 +900,7 @@ Note that the pattern constrains the **locale** segment, never the slug segment,
 
 5. Language switcher. There is no built in switcher component, and none is needed: Laravel renders everything on the server, so plain markup from the `translation[]` array of the current document is enough. A `Flyo\Model\Translation` carries `getLanguage()` (with `getShortcode()` and `getName()`), `getSlug()`, `getTitle()` and a fully resolved `getHref()`.
 
-   A CMS page route binds the page response into the container, so the layout can read the translations without being handed anything, and the `bound()` check keeps it working on a hand written route. Declare the prop in the layout component so an entity page can pass its own translations in, and fall back to the bound page:
+   A CMS page binds the page response into the container, so the layout can read the translations without being handed anything, and the `bound()` check keeps it working on a hand written route. Declare the prop in the layout component so an entity page can pass its own translations in, and fall back to the bound page:
 
 ```blade
 {{-- resources/views/components/layout.blade.php --}}
@@ -956,7 +954,7 @@ When working on any Flyo/Nitro code (block views, entities, `config/flyo.php`, t
 
 Project conventions:
 
-- CMS page routes are registered per request by the package service provider from the Flyo config response, so they do not show up in `php artisan route:list`. Keep `routes/web.php` free of routes which collide with CMS page slugs.
+- CMS pages are served by the fallback route `flyo.page` of the package, after every other route. A route in `routes/web.php` with the path of a CMS page, or a wildcard like `/{slug}` without a prefix, hides the page. Do not add a `Route::fallback()`, use `resources/views/errors/404.blade.php` for a custom 404 page.
 - Flyo block views live in `resources/views/flyo` and are resolved by file name (the Flyo component name), there is no component map.
 - Every block view puts `@editable($block)` on its outermost element, and the layout includes `<x-flyo::head />`, otherwise live edit does not work.
 - CMS fields are untyped `stdClass`, there is no type generation for PHP. Guard every field access, and confirm field names with `composer flyo:schema` (writes the api's OpenAPI schema to `storage/app/flyo-schema.json`) instead of guessing.
@@ -987,7 +985,7 @@ Verify:
 .env.example lists both keys with placeholder values
 config/flyo.php is published and the token resolves from the environment
 routes/web.php has no route colliding with a CMS page slug (the default welcome route is gone)
-No deploy script or CI step runs php artisan route:cache, and no cached route file is present
+routes/web.php has no unprefixed wildcard route like /{slug} and no Route::fallback() (or flyo.page_fallback is false and the fallback calls PageRoutes::dispatch())
 resources/views/cms.blade.php wraps <x-flyo::page /> in the project layout
 The layout renders <x-flyo::head /> in the head and <x-flyo::debug-info /> at the end of the body
 The layout has no hardcoded <title>
