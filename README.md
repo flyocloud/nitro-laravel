@@ -75,7 +75,7 @@ app(\Flyo\Model\Page::class);              // the loaded page, once the page is 
 
 ### Route caching
 
-`php artisan route:cache` and `php artisan optimize` are supported: the route of the CMS pages and `/sitemap.xml` are part of the cache, and caching needs neither the token nor the api. Like for every cached route, the middleware are frozen in the cache, so run `php artisan route:cache` again after changing `page_middleware`, `sitemap` or `page_fallback` in `config/flyo.php`. A deploy which caches the routes does that anyway.
+`php artisan route:cache` and `php artisan optimize` are supported: the route of the CMS pages and `/sitemap.xml` are part of the cache, and caching needs neither the token nor the api. Pages added or renamed in Flyo need no new cache, they are checked against the config on every request. Like for every cached route, the middleware are frozen in the cache, so run `php artisan route:cache` again after changing `page_middleware`, `sitemap` or `page_fallback` in `config/flyo.php`. A deploy which caches the routes does that anyway.
 
 ### Own fallback route
 

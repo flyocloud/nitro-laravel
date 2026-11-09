@@ -4,24 +4,42 @@
 
 **A major release, routing changed.** Until 3.x the package asked the Flyo api for the config while
 booting, on every single request, and registered a route for every CMS page. 4.0 serves all CMS
-pages through one fallback route and loads the config only when something needs it. That brings:
+pages through one route and loads the config only when something reads it.
 
-- **No api request for requests without a page.** Json endpoints, redirects, form posts, file
-  downloads, image proxies and `/up` no longer wait for the config. A page with a layout still
-  loads it once, as before.
-- **`php artisan route:cache` and `php artisan optimize` work.** Until 3.x they removed every CMS
-  page.
+### Highlights
+
+- **Faster requests which are not a page.** The config is loaded at most once per request, and only
+  when something reads it. Json endpoints, redirects, form posts, file downloads, image proxies and
+  `/up` no longer wait for the Flyo api. A page with a layout loads it once, as before.
+- **`$config` costs nothing until a view reads it.** It is a lazy object (PHP 8.4): partials, mails
+  and Livewire updates which do not use `$config` load nothing. No setting needed, your views stay
+  as they are.
+- **Route caching works.** `php artisan route:cache` and `php artisan optimize` can be part of the
+  deploy now, see [Route caching](#route-caching). Until 3.x they removed every CMS page.
 - **A Flyo outage no longer takes the whole application down.** Only the requests which need the
   config fail.
+- **Octane and other long running workers** load the config for every request, the list of pages is
+  never out of date.
+- **One route for all CMS pages.** Every route of the application wins over a CMS page. New for
+  special cases: the option `page_fallback`, `PageRoutes::dispatch()` and `PageRoutes::find()` for an
+  own fallback route, and the route names `flyo.page` and `flyo.sitemap`.
 
-4.0 requires **PHP 8.4** and **Laravel 12 or 13**. PHP 8.4 brings lazy objects, which the package
-uses for `$config` in the views (see below). Laravel 11 is no longer supported, it is end of life and
-Composer refuses to install it because of open security advisories.
+### Requirements
 
-For most projects `composer require flyo/nitro-laravel:^4.0` is all it takes. Go through the
-checklist below to be sure, it takes a few minutes.
+- **PHP 8.4** or newer, for the lazy objects.
+- **Laravel 12 or 13.** Laravel 11 is no longer supported, it is end of life and Composer refuses to
+  install it because of open security advisories.
+- `flyo/nitro-php-bridge` 1.2.1 or newer, Composer pulls it.
 
-### Checklist
+### Upgrade
+
+```sh
+composer require flyo/nitro-laravel:^4.0
+```
+
+For most projects that is all it takes. Go through the checklist to be sure, it takes a few minutes.
+A published `config/flyo.php` does not have to be published again, the new key `page_fallback`
+falls back to its default.
 
 0. **Still on PHP 8.3 or Laravel 11?** Move the server to PHP 8.4 and the project to Laravel 12
    first, while it is still on 3.6 of this package, which supports both. See
@@ -46,8 +64,35 @@ checklist below to be sure, it takes a few minutes.
 3. **Does code look at the route of a CMS page?** Search for `route()->uri()`, `Route::current()`,
    `Route::getRoutes()` and `Route::has(`, see [Breaking changes](#breaking-changes) 3.
 
-4. **Optional: cache the routes.** Add `php artisan route:cache` (or `php artisan optimize`) to the
-   deploy. Never with 3.x.
+4. **Optional: cache the routes,** see [Route caching](#route-caching).
+
+### Test after the upgrade
+
+- The home page and a few CMS pages, a nested one as well.
+- An url which does not exist shows your 404 page.
+- An entity detail page, a draft link and live edit in the Flyo editor.
+- `/sitemap.xml`.
+- The routes of your application, especially the ones with parameters (see checklist 2).
+- With route caching: the same once more after a deploy with `php artisan route:cache`.
+
+### Route caching
+
+New with 4.0. Add it to the deploy, after `composer install`:
+
+```sh
+php artisan route:cache
+# or, caching config, routes, views and events in one go
+php artisan optimize
+```
+
+- The cache contains the route of the CMS pages and `/sitemap.xml`. Building it needs neither
+  `FLYO_TOKEN` nor the Flyo api, so it also works in a build step without network.
+- **Pages added or renamed in Flyo need no new cache.** The pages are checked against the config of
+  the api on every request, the cache only holds the one route which serves them all.
+- Like every route cache, it freezes the middleware: run `php artisan route:cache` again after
+  changing `page_middleware`, `sitemap` or `page_fallback` in `config/flyo.php`. A deploy which
+  caches the routes does that anyway.
+- `php artisan route:clear` removes the cache again.
 
 ### Own fallback route
 
@@ -194,20 +239,7 @@ changes there.
 11. **The route cache contains the page middleware.** If you cache routes, run
     `php artisan route:cache` again after changing `page_middleware`, `sitemap` or `page_fallback`.
 
-12. **PHP 8.4 and Laravel 12 or 13 are required.** See the beginning of this section.
-
-### What's new
-
-1. **`page_fallback`** (default `true`): turn the fallback route of the package off and register
-   your own, see above.
-2. **`$config` costs nothing until it is used.** A view, a partial, a mail or a Livewire update
-   which does not read `$config` no longer loads the config, without any setting.
-3. **`PageRoutes::dispatch($request)`** and **`PageRoutes::find($request)`** for an own fallback
-   route.
-4. **Route names:** the route of the CMS pages is `flyo.page`, the sitemap `flyo.sitemap`.
-
-A project which published `config/flyo.php` before does not have the new key, it falls back to its
-default, so republishing the config file is not required.
+12. **PHP 8.4 and Laravel 12 or 13 are required.** See [Requirements](#requirements).
 
 ### Unchanged
 
