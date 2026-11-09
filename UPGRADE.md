@@ -241,32 +241,6 @@ changes there.
 
 12. **PHP 8.4 and Laravel 12 or 13 are required.** See [Requirements](#requirements).
 
-13. **The ttl fallbacks of `CachingHeaders` are the documented defaults.** Only a project whose
-    published `config/flyo.php` has no `server_cache_ttl` or no `client_cache_ttl` key is affected,
-    the package does not merge its config into the application. The middleware fell back to `1200`
-    seconds for the cdn and `900` for the browser, the reverse of `config/flyo.php` and the readme.
-    It now falls back to `900` and `1200`:
-
-    ```diff
-    -Cache-Control: max-age=900
-    -CDN-Cache-Control: max-age=1200, stale-while-revalidate=450
-    -Vercel-CDN-Cache-Control: max-age=1200, stale-while-revalidate=450
-    +Cache-Control: max-age=1200
-    +CDN-Cache-Control: max-age=900, stale-while-revalidate=450
-    +Vercel-CDN-Cache-Control: max-age=900, stale-while-revalidate=450
-    ```
-
-    A missing key only changes its own header, a key which is set, to any value, is not affected.
-    To keep the previous headers, add the keys with the old values. That also makes the
-    `FLYO_SERVER_CACHE_TTL` and `FLYO_CLIENT_CACHE_TTL` env variables work, they are only read
-    there:
-
-    ```php
-    // config/flyo.php
-    'server_cache_ttl' => env('FLYO_SERVER_CACHE_TTL', 1200),
-    'client_cache_ttl' => env('FLYO_CLIENT_CACHE_TTL', 900),
-    ```
-
 ### Unchanged
 
 - The `cms` view, the `Flyo\Model\Page` binding, the meta data of the head component.
@@ -274,9 +248,7 @@ changes there.
   for CMS pages only: the page check comes first, so `auth` does not send a guest to the login for
   an unknown url and `throttle` does not count it.
 - An unknown url still answers a `GET` request with a 404 before a session is started.
-- Cache headers, unless `config/flyo.php` lacks a ttl key, see
-  [Breaking changes](#breaking-changes) 13. Draft links, live edit, the sitemap content and
-  `EntityController`.
+- Cache headers, draft links, live edit, the sitemap content and `EntityController`.
 - `Flyo\Configuration` is bound on every request, `new EntitiesApi()` without a configuration keeps
   working.
 - Upper and lower case, trailing slashes, url encoded paths and `HEAD` requests match a CMS page
