@@ -1,5 +1,39 @@
 # Upgrade
 
+## 3.6.1 → 3.6.2
+
+**No breaking changes.** `composer update flyo/nitro-laravel` is enough, no code changes are
+required in a project. Only a project whose `config/flyo.php` has no `server_cache_ttl` or no
+`client_cache_ttl` key gets different cache headers.
+
+### Behavior notes
+
+- **The ttl fallbacks of `CachingHeaders` are the documented defaults.** The package does not merge
+  its config into the application, so a project whose published `config/flyo.php` lacks one of the
+  two keys (published before they existed, or removed them) runs on the fallbacks of the
+  middleware. Those were swapped compared to `config/flyo.php` and the readme, `1200` seconds for
+  the cdn and `900` for the browser. They are now `900` and `1200`:
+
+  ```diff
+  -Cache-Control: max-age=900
+  -CDN-Cache-Control: max-age=1200, stale-while-revalidate=450
+  -Vercel-CDN-Cache-Control: max-age=1200, stale-while-revalidate=450
+  +Cache-Control: max-age=1200
+  +CDN-Cache-Control: max-age=900, stale-while-revalidate=450
+  +Vercel-CDN-Cache-Control: max-age=900, stale-while-revalidate=450
+  ```
+
+  A missing key only changes its own header, a key which is set, to any value, is not affected. To
+  keep the previous headers, add the keys with the old values (which also makes the
+  `FLYO_SERVER_CACHE_TTL` and `FLYO_CLIENT_CACHE_TTL` env variables work, they are only read
+  there):
+
+  ```php
+  // config/flyo.php
+  'server_cache_ttl' => env('FLYO_SERVER_CACHE_TTL', 1200),
+  'client_cache_ttl' => env('FLYO_CLIENT_CACHE_TTL', 900),
+  ```
+
 ## 3.5 → 3.6
 
 **No breaking changes.** `composer update flyo/nitro-laravel` is enough, no code changes are
