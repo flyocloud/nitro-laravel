@@ -25,6 +25,15 @@ class ConfigTest extends TestCase
         $this->assertTrue($config['cache_headers']);
     }
 
+    public function test_the_package_serves_the_pages_and_shares_the_config_with_every_view_by_default(): void
+    {
+        $config = require __DIR__.'/../config/flyo.php';
+
+        $this->assertTrue($config['page_fallback']);
+        $this->assertSame('*', $config['config_views']);
+        $this->assertSame([], $config['page_middleware']);
+    }
+
     public function test_the_config_and_the_cms_view_are_publishable(): void
     {
         $paths = SupportServiceProvider::pathsToPublish(ServiceProvider::class);

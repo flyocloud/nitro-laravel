@@ -42,7 +42,68 @@ artisan vendor:publish
 
 Adjust the token in `config/flyo.php`
 
-> Ensure to remove the default routes in `routes/web.php` which could conflict with the cms routes.
+> Remove the welcome route `Route::get('/', ...)` from `routes/web.php` if the Flyo home page should be shown at `/`. Every route of your application wins over a CMS page, see [Routing](#routing).
+
+> **Upgrading from 3.x?** CMS pages are routed differently since 4.0, read the [upgrade guide](UPGRADE.md#36--40) first.
+
+## Routing
+
+The package serves every page of the Flyo config through **one fallback route**. Laravel tries a fallback route after all other routes, so the rule is simple:
+
+**Every route you register wins over a CMS page.** A CMS page is shown for an url which no other route of your application, or of a package, matches.
+
+What this means for `routes/web.php`:
+
+- A route with the path of a CMS page hides that page. The welcome route at `/` for example hides the Flyo home page, remove it if Flyo should serve `/`.
+- A route with a parameter in the first segment, like `/{slug}`, matches the CMS pages as well. Give it a prefix (`/news/{slug}`), or restrict it with `where()` so it only matches what it really serves:
+
+  ```php
+  Route::get('/{slug}', NewsController::class)->where('slug', 'news-[0-9]+');
+  ```
+
+An url which is neither a route nor a CMS page answers with a 404. Laravel renders `resources/views/errors/404.blade.php` for it, which can use your layout and `$config` like any other view.
+
+`php artisan route:list` shows a single route for all CMS pages, `{fallbackPlaceholder}` named `flyo.page`. To tell whether the current request is a CMS page:
+
+```php
+request()->routeIs('flyo.page');           // true on a CMS page
+request()->attributes->get('flyo.page');   // the path of the page as the config delivers it, null elsewhere
+app(\Flyo\Model\Page::class);              // the loaded page, once the page is rendered
+```
+
+> An unknown url answers a `POST`, `PUT`, `PATCH` or `DELETE` request with `405 Method Not Allowed`, and an `OPTIONS` request with `200`, not with `404`. Laravel does this for every application with a route which matches every path.
+
+### Route caching
+
+`php artisan route:cache` and `php artisan optimize` are supported: the route of the CMS pages and `/sitemap.xml` are part of the cache, and caching needs neither the token nor the api. Like for every cached route, the middleware are frozen in the cache, so run `php artisan route:cache` again after changing `page_middleware`, `sitemap` or `page_fallback` in `config/flyo.php`. A deploy which caches the routes does that anyway.
+
+### Own fallback route
+
+Laravel has room for one `Route::fallback()`. If your application registers one, it replaces the route of the CMS pages and no CMS page is reachable anymore. The package notices this: outside of production the request fails with an explanation, in production it is logged as an error.
+
+- If your fallback only shows a custom 404 page, remove it and put the page into `resources/views/errors/404.blade.php`.
+- If it does more, like redirecting old urls, turn the fallback of the package off and hand the CMS pages over from yours:
+
+```php
+// config/flyo.php
+'page_fallback' => false,
+```
+
+```php
+// routes/web.php
+use Flyo\Laravel\PageRoutes;
+use Illuminate\Http\Request;
+
+Route::fallback(function (Request $request) {
+    if ($target = LegacyRedirects::for($request->path())) {
+        return redirect($target, 301);
+    }
+
+    return PageRoutes::dispatch($request);
+});
+```
+
+`PageRoutes::dispatch()` does what the fallback route of the package does: a 404 for an url which is not a CMS page, otherwise the `page_middleware`, the cache headers and the page itself. `PageRoutes::find($request)` only checks, it returns the path of the CMS page or `null`.
 
 ## Views
 
@@ -156,7 +217,7 @@ The bridge url is pinned to the major version, so bridge releases are picked up 
 
 ## Layout Variable
 
-In order to build menus, the `$config` response from the api is a global available variable, for example this could be used in layout-components:
+Every view gets the config response of the api as `$config`, for example to build menus in layout components:
 
 ```php
 /** @var \Flyo\Model\ConfigResponse $config */
@@ -166,6 +227,19 @@ In order to build menus, the `$config` response from the api is a global availab
     <?php endforeach; ?>
 </div>
 ```
+
+The config is loaded from the api the first time it is needed in a request, and at most once per request: by the page check of a CMS page, by the first view which renders, or by a class which takes `Flyo\Model\ConfigResponse` in its constructor. A request which renders no view, like a json endpoint, a redirect, a form post, a file download or an image proxy, does not load it at all.
+
+`$config` is given to every view by default. To load the config only for your layouts, and not for partials, mails or Livewire updates, narrow `config_views` to the views which really use it:
+
+```php
+// config/flyo.php
+'config_views' => ['layouts.*', 'components.layout'],
+```
+
+A view which is handed a variable `config` of its own keeps it.
+
+If the Flyo api can not be reached, only the requests which need the config fail. If your error page uses the layout as well, Laravel falls back to its plain error page. Monitor a CMS page if you want to know when Flyo is not reachable, an uptime check of `/up` does not load the config.
 
 Make sure to include the `<x-flyo::head>` component in the head of your layout file, for example
 
@@ -331,11 +405,11 @@ sitemap, for example because it renders a sitemap of its own at that path or non
 
 ## Page Middleware
 
-The package registers a route for every page of the Flyo config. These routes are closures of the
-package, so an application adds behaviour to them through `page_middleware`: the listed middleware
-run on the CMS page routes only, after the `web` group and `CachingHeaders`, and before the page is
-loaded from the api. Hand written routes, like the entity detail pages, are not affected, so the
-middleware does not have to tell a CMS page apart from the rest of the application.
+`page_middleware` adds middleware to the CMS pages, and to nothing else. The listed middleware run
+after the `web` group and `CachingHeaders`, and before the page is loaded from the api. For an url
+which is not a CMS page they do not run at all: `auth` does not send a guest to the login for a 404,
+and `throttle` does not count it. Hand written routes, like the entity detail pages, are not
+affected, so the middleware does not have to tell a CMS page apart from the rest of the application.
 
 ```php
 // config/flyo.php
@@ -346,9 +420,9 @@ middleware does not have to tell a CMS page apart from the rest of the applicati
 ```
 
 A middleware which returns early (a redirect, an `abort()`) saves the api request of the page. The
-`Flyo\Model\ConfigResponse` with the navigation containers is already in the container at that
-point. For example, a page with children but no content of its own can send the visitor to its
-first child:
+`Flyo\Model\ConfigResponse` with the navigation containers is already loaded at that point, the page
+check needed it. For example, a page with children but no content of its own can send the visitor to
+its first child:
 
 ```php
 class RedirectToFirstChild
@@ -376,7 +450,7 @@ after the editors changed the page tree.
 
 ## Cache Headers
 
-`Flyo\Laravel\Middleware\CachingHeaders` is applied to the CMS page routes and the sitemap. It
+`Flyo\Laravel\Middleware\CachingHeaders` is applied to the CMS pages and the sitemap. It
 writes one header for the browser and the two cdn specific ones which take precedence on the edge:
 
 ```
@@ -537,10 +611,10 @@ Route::get('{locale}/ort/{slug}', function ($locale, $slug) {
 
 ## Misc
 
-In order to resolve the Configuration object somewhere in your application, you can use the following code:
+In order to resolve the config response somewhere in your application, you can use the following code. Resolving it loads the config from the api, unless something did so before in the same request:
 
 ```php
-// use DI to resolve the Configuration object
+// use DI to resolve the config response
 public function __construct(public Flyo\Model\ConfigResponse $config)
 {
 }
@@ -550,10 +624,10 @@ public function __construct(public Flyo\Model\ConfigResponse $config)
 $configResponse = app(Flyo\Model\ConfigResponse::class);
 ```
 
-Same for the page response
+Same for the page response, which is bound once a CMS page was loaded
 
 ```php
-// use DI to resolve the Configuration object
+// use DI to resolve the page response
 public function __construct(public Flyo\Model\Page $page)
 {
 }
@@ -561,6 +635,29 @@ public function __construct(public Flyo\Model\Page $page)
 // or facade
 /** @var Flyo\Model\Page $cfg */
 $page = app(Flyo\Model\Page::class);
+```
+
+## Testing
+
+Tests run on the command line, where the package does not talk to the api. The route of the CMS pages exists, but without a config there are no pages: an url which is not a route of your application answers with a 404, without a request to Flyo.
+
+To render a CMS page in a test of your application, bind the config and fake the page:
+
+```php
+use Flyo\Api\PagesApi;
+use Flyo\Model\ConfigResponse;
+use Flyo\Model\Page;
+use Illuminate\Support\Facades\View;
+
+$config = new ConfigResponse(['pages' => ['about']]);
+$this->app->instance(ConfigResponse::class, $config);
+View::share('config', $config); // on the command line the views do not get $config by themselves
+
+$pages = Mockery::mock(PagesApi::class);
+$pages->shouldReceive('page')->with('about', 'en')->andReturn(new Page(['title' => 'About']));
+$this->app->instance(PagesApi::class, $pages);
+
+$this->get('/about')->assertOk()->assertSee('About');
 ```
 
 ## Example `AGENTS.md`
@@ -584,7 +681,7 @@ When working on any Flyo/Nitro code (block views, entities, `config/flyo.php`, t
 
 Project conventions:
 
-- CMS page routes are registered per request by the package service provider from the Flyo config response, so they do not show up in `php artisan route:list`. Keep `routes/web.php` free of routes which collide with CMS page slugs.
+- CMS pages are served by the fallback route `flyo.page` of the package, after every other route. A route in `routes/web.php` with the path of a CMS page, or a wildcard like `/{slug}` without a prefix, hides the page. Do not add a `Route::fallback()`, use `resources/views/errors/404.blade.php` for a custom 404 page.
 - Flyo block views live in `resources/views/flyo` and are resolved by file name (the Flyo component name), there is no component map.
 - Every block view puts `@editable($block)` on its outermost element, and the layout includes `<x-flyo::head />`, otherwise live edit does not work.
 - Block, container and entity fields are typed by the classes `php artisan flyo:types` generates into `app/Flyo`. Annotate block views with them, regenerate them after a schema change, and still guard every field access: at runtime the fields are plain objects which can be empty. Never guess a field name.

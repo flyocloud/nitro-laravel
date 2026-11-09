@@ -1,0 +1,3 @@
+# Read by vendor/bin/testbench, which RouteCacheTest runs `route:cache` with in a process of its own.
+providers:
+  - Flyo\Laravel\ServiceProvider

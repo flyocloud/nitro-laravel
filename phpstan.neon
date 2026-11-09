@@ -21,4 +21,4 @@ parameters:
             paths:
                 - src/Components/Page.php
                 - src/Components/Slot.php
-                - src/PageRoutes.php
+                - src/Controllers/PageController.php

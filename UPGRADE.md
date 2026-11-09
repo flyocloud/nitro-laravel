@@ -1,5 +1,190 @@
 # Upgrade
 
+## 3.6 → 4.0
+
+**A major release, routing changed.** Until 3.x the package asked the Flyo api for the config while
+booting, on every single request, and registered a route for every CMS page. 4.0 serves all CMS
+pages through one fallback route and loads the config only when something needs it. That brings:
+
+- **No api request for requests without a page.** Json endpoints, redirects, form posts, file
+  downloads, image proxies and `/up` no longer wait for the config. A page with a layout still
+  loads it once, as before.
+- **`php artisan route:cache` and `php artisan optimize` work.** Until 3.x they removed every CMS
+  page.
+- **A Flyo outage no longer takes the whole application down.** Only the requests which need the
+  config fail.
+
+For most projects `composer require flyo/nitro-laravel:^4.0` is all it takes. Go through the
+checklist below to be sure, it takes a few minutes.
+
+### Checklist
+
+1. **Does `routes/web.php` contain a `Route::fallback()`?** Then it replaces the route of all CMS
+   pages, see [Own fallback route](#own-fallback-route). The package tells you: outside of
+   production a request fails with an explanation, in production it is logged.
+
+   ```sh
+   grep -rn "Route::fallback" routes app
+   ```
+
+2. **Is there a route with a parameter in the first segment, like `/{slug}`, `/{any}` or
+   `/{category}/{slug}`?** It now wins over the CMS pages, see
+   [Wildcard routes](#wildcard-routes).
+
+   ```sh
+   php artisan route:list
+   ```
+
+3. **Does code look at the route of a CMS page or at the shared `$config`?** Search for
+   `route()->uri()`, `Route::current()`, `Route::getRoutes()`, `Route::has(` and `getShared()`, see
+   [Breaking changes](#breaking-changes) 3 and 5.
+
+4. **Optional: cache the routes.** Add `php artisan route:cache` (or `php artisan optimize`) to the
+   deploy. Never with 3.x.
+
+### Own fallback route
+
+Laravel has room for one `Route::fallback()`. The package registers it now, a fallback of the
+application loads later and replaces it, and then every CMS page ends up in the fallback of the
+application.
+
+**The fallback only renders a custom 404 page:** remove it and move the page to
+`resources/views/errors/404.blade.php`. Laravel renders that view for every unknown url, with your
+layout and `$config` if you like.
+
+```diff
+ // routes/web.php
+-Route::fallback(fn () => response()->view('not-found', [], 404));
+```
+
+**The fallback does more** (redirects of old urls, a proxy, a search): turn the fallback of the
+package off and hand the CMS pages over from yours with `PageRoutes::dispatch()`. It runs the same
+page check, `page_middleware` and cache headers as the route of the package:
+
+```diff
+ // config/flyo.php
++'page_fallback' => false,
+```
+
+```diff
+ // routes/web.php
++use Flyo\Laravel\PageRoutes;
+
+ Route::fallback(function (Request $request) {
+     if ($target = LegacyRedirects::for($request->path())) {
+         return redirect($target, 301);
+     }
+
+-    abort(404);
++    return PageRoutes::dispatch($request);
+ });
+```
+
+`PageRoutes::find($request)` returns the path of the CMS page the request points to, or `null`, if
+your fallback has to decide first.
+
+### Wildcard routes
+
+Until 3.x a CMS page won over a route like `Route::get('/{slug}', ...)`, because the page routes were
+registered first. In 4.0 every route of the application wins, so such a route now catches the CMS
+pages as well. Narrow it to what it really serves:
+
+```diff
+-Route::get('/{slug}', [NewsController::class, 'show']);
++Route::get('/news/{slug}', [NewsController::class, 'show']);
++// or
++Route::get('/{slug}', [NewsController::class, 'show'])->where('slug', 'news-[0-9]+');
+```
+
+A route with exactly the path of a CMS page (`/kontakt`) won over the page in 3.x already, nothing
+changes there.
+
+### Breaking changes
+
+1. **A `Route::fallback()` of the application replaces the route of the CMS pages.** See
+   [Own fallback route](#own-fallback-route).
+
+2. **Wildcard routes win over CMS pages.** See [Wildcard routes](#wildcard-routes).
+
+3. **CMS pages are no longer routes of their own.** All of them share one route: `route:list`,
+   `Route::has()` and `Route::getRoutes()` no longer list single pages, and
+   `request()->route()->uri()` is `{fallbackPlaceholder}` on every page. Monitoring which groups by
+   route (Sentry, Nightwatch, Pulse, Telescope) shows all CMS pages as one entry. Read the path from
+   `request()->path()` instead, and tell a CMS page apart with:
+
+   ```php
+   request()->routeIs('flyo.page');
+   request()->attributes->get('flyo.page'); // the path of the page, as the config delivers it
+   ```
+
+4. **Other methods on an unknown url answer with 405 instead of 404.** `POST`, `PUT`, `PATCH` and
+   `DELETE` get `405 Method Not Allowed`, `OPTIONS` gets `200` with an `Allow` header. Laravel does
+   this for every application with a route which matches every path. Adjust monitoring or firewall
+   rules which count 404s, if any.
+
+5. **`$config` comes from a view composer instead of `View::share()`.** Every view still gets it,
+   but `View::getShared()` and `View::shared('config')` no longer contain it. A view which is handed
+   a variable `config` of its own, or a `config` your application shares, keeps it. Resolve the
+   config with `app(\Flyo\Model\ConfigResponse::class)` or constructor injection instead of reading
+   the shared view data.
+
+6. **A Flyo outage only fails the requests which need the config.** Until 3.x every request failed
+   with a 500, so an uptime check of `/up` noticed it. Monitor a CMS page if you want to know. If
+   your error page renders the layout with `$config`, Laravel falls back to its plain error page
+   while Flyo is down. A missing token still fails every request, as before.
+
+7. **The config is loaded in the locale which is set when it is first needed.** Until 3.x it was
+   the locale of the first url segment (with more than one `flyo.locales`), at boot. That detection
+   is unchanged and still happens at boot, so nothing changes unless your application sets the
+   locale itself, in a middleware for example. A CMS page loads the config right after the global
+   middleware, before the `web` group.
+
+8. **`PageRoutes::boot()` is removed.** The package registers its route itself.
+   `PageRoutes::middleware()` is unchanged.
+
+9. **The route exists in tests and on the command line.** An unknown url in a test of your
+   application now passes the page check of the package and still answers with a 404, without a
+   request to the api. `/sitemap.xml` is a route in tests as well. See the "Testing" section of the
+   readme to render a CMS page in a test.
+
+10. **Octane and other long running workers load the config for every request.** Until 3.x it was
+    loaded once per worker, including the list of pages, which therefore went out of date.
+
+11. **The route cache contains the page middleware.** If you cache routes, run
+    `php artisan route:cache` again after changing `page_middleware`, `sitemap` or `page_fallback`.
+
+### What's new
+
+1. **`page_fallback`** (default `true`): turn the fallback route of the package off and register
+   your own, see above.
+2. **`config_views`** (default `'*'`, every view): the views which get `$config`. Narrow it to your
+   layouts, so partials, mails and Livewire updates do not load the config:
+
+   ```diff
+    // config/flyo.php
+   +'config_views' => ['layouts.*', 'components.layout'],
+   ```
+
+3. **`PageRoutes::dispatch($request)`** and **`PageRoutes::find($request)`** for an own fallback
+   route.
+4. **Route names:** the route of the CMS pages is `flyo.page`, the sitemap `flyo.sitemap`.
+
+A project which published `config/flyo.php` before does not have the two new keys, both fall back
+to their default, so republishing the config file is not required.
+
+### Unchanged
+
+- The `cms` view, the `Flyo\Model\Page` binding, the meta data of the head component.
+- The `page_middleware` and their order, after the `web` group and `CachingHeaders`. They still run
+  for CMS pages only: the page check comes first, so `auth` does not send a guest to the login for
+  an unknown url and `throttle` does not count it.
+- An unknown url still answers a `GET` request with a 404 before a session is started.
+- Cache headers, draft links, live edit, the sitemap content and `EntityController`.
+- `Flyo\Configuration` is bound on every request, `new EntitiesApi()` without a configuration keeps
+  working.
+- Upper and lower case, trailing slashes, url encoded paths and `HEAD` requests match a CMS page
+  the same way as before.
+
 ## 3.5 → 3.6
 
 **No breaking changes.** `composer update flyo/nitro-laravel` is enough, no code changes are
