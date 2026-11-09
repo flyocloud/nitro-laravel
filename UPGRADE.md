@@ -14,10 +14,16 @@ pages through one fallback route and loads the config only when something needs 
 - **A Flyo outage no longer takes the whole application down.** Only the requests which need the
   config fail.
 
+4.0 requires **Laravel 12 or 13**, Laravel 11 is no longer supported (it is end of life, and
+Composer refuses to install it because of open security advisories). PHP 8.3 stays the minimum.
+
 For most projects `composer require flyo/nitro-laravel:^4.0` is all it takes. Go through the
 checklist below to be sure, it takes a few minutes.
 
 ### Checklist
+
+0. **Still on Laravel 11?** Upgrade to Laravel 12 first, see
+   [From Laravel 11](#from-laravel-11). With 3.6 of this package, which supports both.
 
 1. **Does `routes/web.php` contain a `Route::fallback()`?** Then it replaces the route of all CMS
    pages, see [Own fallback route](#own-fallback-route). The package tells you: outside of
@@ -82,6 +88,40 @@ page check, `page_middleware` and cache headers as the route of the package:
 
 `PageRoutes::find($request)` returns the path of the CMS page the request points to, or `null`, if
 your fallback has to decide first.
+
+### From Laravel 11
+
+Laravel 12 is a small release, follow the [official upgrade guide](https://laravel.com/docs/12.x/upgrade)
+and bump the framework while the project is still on 3.6 of this package:
+
+```sh
+composer require laravel/framework:^12.0 --with-all-dependencies
+```
+
+Check that the site works, then update to 4.0. Of the changes in Laravel 12, these can touch a Flyo
+project:
+
+- **Carbon 3 is required** (Laravel 11 also allowed Carbon 2). `Carbon::createFromTimestamp()` now
+  creates the date in UTC instead of the timezone of the application. Flyo delivers its dates as unix
+  timestamps (`draftExpiresAt`, `updated_at`, date fields of entities), so pass the timezone where
+  you format one:
+
+  ```diff
+  -Carbon::createFromTimestamp($draftExpiresAt)->format('d.m.Y H:i')
+  +Carbon::createFromTimestamp($draftExpiresAt, config('app.timezone'))->format('d.m.Y H:i')
+  ```
+
+  `diffForHumans()` is not affected. `diffInDays()` and the other `diffIn*()` methods return a float
+  now, and a negative number for a date in the past. `<x-flyo::debug-info />` already passes the
+  timezone.
+
+- **A constructor parameter with a default value gets that default** when nothing is bound in the
+  container, Laravel 11 created an empty object instead. `?Flyo\Model\Page $page = null` in a
+  component is now `null` on a page which is not a CMS page (until then an empty page), the same holds
+  for `ConfigResponse` and `Configuration` in a queue job or an artisan command. Check such
+  parameters for `null`, or leave the default away where the binding always exists.
+
+- **The tests run on PHPUnit 11 or 12.** Nothing in this package depends on it.
 
 ### Wildcard routes
 

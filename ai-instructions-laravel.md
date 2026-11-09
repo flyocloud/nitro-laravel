@@ -10,7 +10,7 @@ Repository and documentation:
 
 ## Important constraints
 
-The package requires **PHP 8.3+** and **Laravel 11, 12 or 13**, and it renders with **Blade**. If the project is on an older Laravel or PHP, stop and say so instead of installing: `composer require` would fail on the platform requirements anyway.
+The package requires **PHP 8.3+** and **Laravel 12 or 13**, and it renders with **Blade**. If the project is on an older Laravel or PHP, stop and say so instead of installing (a Laravel 11 project upgrades to Laravel 12 first, see UPGRADE.md of the package): `composer require` would fail on the platform requirements anyway.
 
 The integration is **server rendered on every request**. There is no build step, no static export and no generated route file. The package (version 4 or newer) serves every CMS page through **one fallback route** named `flyo.page`, which Laravel tries after all other routes. Whether a path is a CMS page is decided per request against the site configuration of the Flyo API, which is loaded at most once per request and only when something needs it. Three things follow from that:
 

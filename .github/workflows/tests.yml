@@ -10,20 +10,14 @@ jobs:
       fail-fast: false
       matrix:
         php-versions: ['8.3', '8.4', '8.5']
-        laravel: ['11', '12', '13']
+        laravel: ['12', '13']
         stability: ['prefer-stable', 'prefer-lowest']
         include:
-          # testbench-core 9.0 and 9.1 reset a test property which Laravel 11.14 no longer has
-          - laravel: '11'
-            testbench: '^9.2'
           - laravel: '12'
             testbench: '^10.0'
           - laravel: '13'
             testbench: '^11.0'
         exclude:
-          # Laravel 11 supports PHP up to 8.4
-          - laravel: '11'
-            php-versions: '8.5'
           # the lowest releases predate the newer PHP versions, they are checked on the lowest PHP
           - stability: 'prefer-lowest'
             php-versions: '8.4'
@@ -45,15 +39,6 @@ jobs:
 
       - name: Validate composer.json
         run: composer validate --no-check-lock
-
-      # Laravel 11 is end of life, Composer refuses every release of it because of open security
-      # advisories. The package still supports it, so its tests install it regardless.
-      - name: Allow the end of life Laravel 11
-        if: matrix.laravel == '11'
-        run: |
-          composer config --no-interaction audit.block-insecure false || true
-          composer config --no-interaction policy.advisories.block false || true
-          echo "COMPOSER_NO_SECURITY_BLOCKING=1" >> "$GITHUB_ENV"
 
       - name: Pin the Laravel version
         run: |
