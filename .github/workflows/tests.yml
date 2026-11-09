@@ -45,6 +45,15 @@ jobs:
       - name: Validate composer.json
         run: composer validate --no-check-lock
 
+      # Laravel 11 is end of life, Composer refuses every release of it because of open security
+      # advisories. The package still supports it, so its tests install it regardless.
+      - name: Allow the end of life Laravel 11
+        if: matrix.laravel == '11'
+        run: |
+          composer config --no-interaction audit.block-insecure false || true
+          composer config --no-interaction policy.advisories.block false || true
+          echo "COMPOSER_NO_SECURITY_BLOCKING=1" >> "$GITHUB_ENV"
+
       - name: Pin the Laravel version
         run: |
           composer require "laravel/framework:^${{ matrix.laravel }}.0" --no-interaction --no-update
