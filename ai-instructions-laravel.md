@@ -10,7 +10,7 @@ Repository and documentation:
 
 ## Important constraints
 
-The package requires **PHP 8.3+** and **Laravel 12 or 13**, and it renders with **Blade**. If the project is on an older Laravel or PHP, stop and say so instead of installing (a Laravel 11 project upgrades to Laravel 12 first, see UPGRADE.md of the package): `composer require` would fail on the platform requirements anyway.
+The package requires **PHP 8.4+** and **Laravel 12 or 13**, and it renders with **Blade**. If the project is on an older Laravel or PHP, stop and say so instead of installing (a Laravel 11 project upgrades to Laravel 12 first, see UPGRADE.md of the package): `composer require` would fail on the platform requirements anyway.
 
 The integration is **server rendered on every request**. There is no build step, no static export and no generated route file. The package (version 4 or newer) serves every CMS page through **one fallback route** named `flyo.page`, which Laravel tries after all other routes. Whether a path is a CMS page is decided per request against the site configuration of the Flyo API, which is loaded at most once per request and only when something needs it. Three things follow from that:
 
@@ -186,7 +186,7 @@ An url which is neither a route nor a CMS page answers with a 404 and renders `r
 
 ### 4. Create neutral layout `Header` and `Footer` components
 
-Every view gets the Flyo config response as `$config` (a view composer of the package, it loads the config on first use), so the components need no props. Use the container identifiers the user gave you.
+Every view gets the Flyo config response as `$config` (a lazy object, the config is loaded when a view first reads it), so the components need no props. Use the container identifiers the user gave you.
 
 Create `resources/views/components/layout/header.blade.php`:
 

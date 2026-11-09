@@ -58,12 +58,6 @@ return [
     // of the readme.
     'page_fallback' => true,
 
-    // The views which get the Flyo config as `$config`. The config is loaded from the api when the
-    // first of these views is rendered, at most once per request. '*' means every view, as before 4.0.
-    // Narrow it to your layouts, for example ['layouts.*', 'components.layout'], so partials, mails
-    // and Livewire updates do not load the config. Data handed to a view as `config` always wins.
-    'config_views' => '*',
-
     // Middleware for the CMS pages only. They run after the `web` group and the CachingHeaders
     // middleware, in the order listed, and before the page is loaded from the api, so a middleware
     // which returns a redirect or an abort costs no api request. For an url which is not a CMS page

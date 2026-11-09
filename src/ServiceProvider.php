@@ -12,12 +12,12 @@ use Flyo\Laravel\Middleware\PreventDraftCaching;
 use Flyo\Model\ConfigResponse;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Contracts\Foundation\CachesRoutes;
-use Illuminate\Contracts\View\Factory as ViewFactory;
+use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider as SupportServiceProvider;
-use Illuminate\View\View;
+use Illuminate\View\Factory;
 use LogicException;
 use RuntimeException;
 
@@ -31,7 +31,7 @@ class ServiceProvider extends SupportServiceProvider
         ]);
     }
 
-    public function boot(ViewFactory $viewFactory, ConfigRepository $configRepository): void
+    public function boot(ConfigRepository $configRepository): void
     {
         $this->loadViewsFrom(__DIR__.'/../resources/views', $configRepository->get('flyo.views_namespace', 'flyo'));
         Blade::componentNamespace('Flyo\\Laravel\\Components', 'flyo');
@@ -56,7 +56,7 @@ class ServiceProvider extends SupportServiceProvider
         }
 
         if (! $this->app->runningInConsole()) {
-            $this->bootRequest($viewFactory, $configRepository);
+            $this->bootRequest($configRepository);
         }
 
         // The routes do not depend on the config of the api, they are registered on the command line
@@ -79,7 +79,7 @@ class ServiceProvider extends SupportServiceProvider
      * Prepares the api access of an http request. No request is sent to the api here, the config is
      * loaded when something needs it, see ConfigLoader.
      */
-    protected function bootRequest(ViewFactory $viewFactory, ConfigRepository $configRepository): void
+    protected function bootRequest(ConfigRepository $configRepository): void
     {
         $locales = $configRepository->get('flyo.locales', []);
         if (! empty($locales) && count($locales) > 1) {
@@ -123,16 +123,11 @@ class ServiceProvider extends SupportServiceProvider
             return $app->make(ConfigLoader::class)->load();
         });
 
-        // `$config` in the views. A composer instead of View::share(), so the config is only loaded
-        // when a view is rendered. Data which is handed to the view, or shared by the application,
-        // under the same name wins.
-        $viewFactory->composer($configRepository->get('flyo.config_views', '*') ?? [], function (View $view) {
-            if (array_key_exists('config', $view->getData()) || array_key_exists('config', $view->getFactory()->getShared())) {
-                return;
-            }
-
-            $view->with('config', $this->app->make(ConfigResponse::class));
-        });
+        // `$config` in the views, a lazy object which loads the config when a view reads it, see
+        // ViewConfig. Data handed to a view, or shared by the application, under the same name wins.
+        $views = $this->app->make(Factory::class);
+        ViewConfig::share($views);
+        $this->app->make('events')->listen(RequestHandled::class, fn () => ViewConfig::renew($views));
 
         $isLiveEdit = $configRepository->get('flyo.live_edit', false);
         Log::debug('Flyo live edit is '.($isLiveEdit ? 'enabled' : 'disabled'));

@@ -28,7 +28,7 @@ The advisory covers:
 
 ## Usage
 
-Requires PHP 8.3 or newer and Laravel 12 or 13.
+Requires PHP 8.4 or newer and Laravel 12 or 13.
 
 ```sh
 composer require flyo/nitro-laravel
@@ -228,16 +228,9 @@ Every view gets the config response of the api as `$config`, for example to buil
 </div>
 ```
 
-The config is loaded from the api the first time it is needed in a request, and at most once per request: by the page check of a CMS page, by the first view which renders, or by a class which takes `Flyo\Model\ConfigResponse` in its constructor. A request which renders no view, like a json endpoint, a redirect, a form post, a file download or an image proxy, does not load it at all.
+Nothing has to be configured for that. The config is loaded from the api only when something reads it, and at most once per request: a view which calls a method on `$config`, the page check of a CMS page, or a class which takes `Flyo\Model\ConfigResponse` in its constructor. A request which does not read it, like a json endpoint, a redirect, a form post, a file download, an image proxy, or a partial and a Livewire update which do not use `$config`, does not load it at all.
 
-`$config` is given to every view by default. To load the config only for your layouts, and not for partials, mails or Livewire updates, narrow `config_views` to the views which really use it:
-
-```php
-// config/flyo.php
-'config_views' => ['layouts.*', 'components.layout'],
-```
-
-A view which is handed a variable `config` of its own keeps it.
+`$config` is a lazy object (PHP 8.4): it is a `Flyo\Model\ConfigResponse` for every type check, and it loads itself on the first read. A view which is handed a variable `config` of its own keeps it.
 
 If the Flyo api can not be reached, only the requests which need the config fail. If your error page uses the layout as well, Laravel falls back to its plain error page. Monitor a CMS page if you want to know when Flyo is not reachable, an uptime check of `/up` does not load the config.
 

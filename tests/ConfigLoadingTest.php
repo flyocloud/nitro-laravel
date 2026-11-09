@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
 use Orchestra\Testbench\Attributes\DefineEnvironment;
+use ReflectionClass;
 use RuntimeException;
 
 /**
@@ -26,16 +27,6 @@ class ConfigLoadingTest extends HttpTestCase
     protected function withConfigAwarePageMiddleware($app): void
     {
         $app['config']->set('flyo.page_middleware', [ConfigAwareMiddleware::class]);
-    }
-
-    protected function withConfigOnlyInComponents($app): void
-    {
-        $app['config']->set('flyo.config_views', ['components.*']);
-    }
-
-    protected function withoutConfigInViews($app): void
-    {
-        $app['config']->set('flyo.config_views', []);
     }
 
     public function test_booting_requests_nothing(): void
@@ -107,29 +98,46 @@ class ConfigLoadingTest extends HttpTestCase
         $this->assertSame(['en'], $this->configApi->requests);
     }
 
-    #[DefineEnvironment('withConfigOnlyInComponents')]
-    public function test_the_views_which_get_the_config_can_be_narrowed(): void
+    public function test_the_config_is_shared_with_the_views_as_a_lazy_object(): void
     {
-        Route::middleware('web')->group(function () {
-            Route::get('/partial', fn () => view('partials.plain'));
-            Route::get('/entity', fn () => view('entity'));
-        });
+        $config = View::getShared()['config'];
 
-        $this->get('/partial')->assertOk()->assertSee('plain');
+        $this->assertInstanceOf(ConfigResponse::class, $config);
+        $this->assertTrue((new ReflectionClass(ConfigResponse::class))->isUninitializedLazyObject($config));
         $this->assertSame([], $this->configApi->requests);
 
-        $this->get('/entity')->assertOk()->assertSee('nav:,about', false);
+        // the first read loads it
+        $this->assertSame(['', 'about', 'about/team', 'über-uns'], $config->getPages());
         $this->assertSame(['en'], $this->configApi->requests);
     }
 
-    #[DefineEnvironment('withoutConfigInViews')]
-    public function test_the_config_can_be_kept_out_of_the_views(): void
+    public function test_a_view_which_does_not_read_the_config_requests_none(): void
     {
-        Route::middleware('web')->get('/partial', fn () => view('handed', ['config' => 'none']));
+        // a partial, a mail or a Livewire update which does not use $config
+        Route::middleware('web')->get('/partial', fn () => view('partials.plain'));
 
-        $this->get('/partial')->assertOk()->assertSee('handed:none');
+        $this->get('/partial')->assertOk()->assertSee('plain');
 
         $this->assertSame([], $this->configApi->requests);
+    }
+
+    public function test_handing_the_config_on_does_not_load_it(): void
+    {
+        Route::middleware('web')->get('/forwarded', fn () => view('forwarded'));
+
+        $this->get('/forwarded')->assertOk()->assertSee('plain');
+
+        $this->assertSame([], $this->configApi->requests);
+    }
+
+    public function test_a_view_which_reads_the_config_loads_it_once(): void
+    {
+        // the layout, an included partial and the debug info component all read it
+        Route::middleware('web')->get('/entity', fn () => view('entity'));
+
+        $this->get('/entity')->assertOk()->assertSee('nav:,about', false)->assertSee('footer:4', false);
+
+        $this->assertSame(['en'], $this->configApi->requests);
     }
 
     public function test_a_config_handed_to_the_view_wins(): void
@@ -146,6 +154,7 @@ class ConfigLoadingTest extends HttpTestCase
         View::share('config', 'shared');
         Route::middleware('web')->get('/handed', fn () => view('handed'));
 
+        $this->get('/handed')->assertOk()->assertSee('handed:shared');
         $this->get('/handed')->assertOk()->assertSee('handed:shared');
 
         $this->assertSame([], $this->configApi->requests);
@@ -179,6 +188,21 @@ class ConfigLoadingTest extends HttpTestCase
 
         $this->assertSame(['en', 'fr'], $this->configApi->requests);
         $this->assertSame([['about', 'en'], ['about', 'fr']], $this->pagesApi->requests);
+    }
+
+    public function test_a_long_running_worker_shares_a_fresh_config_with_the_views_of_every_request(): void
+    {
+        Route::middleware('web')->get('/entity', fn () => view('entity'));
+
+        $this->get('/entity')->assertOk();
+
+        // what octane does between two requests, the view factory and its shared data stay
+        $this->app->forgetScopedInstances();
+        App::setLocale('fr');
+
+        $this->get('/entity')->assertOk();
+
+        $this->assertSame(['en', 'fr'], $this->configApi->requests);
     }
 
     public function test_the_config_is_loaded_in_the_locale_of_its_first_access(): void

@@ -14,16 +14,18 @@ pages through one fallback route and loads the config only when something needs 
 - **A Flyo outage no longer takes the whole application down.** Only the requests which need the
   config fail.
 
-4.0 requires **Laravel 12 or 13**, Laravel 11 is no longer supported (it is end of life, and
-Composer refuses to install it because of open security advisories). PHP 8.3 stays the minimum.
+4.0 requires **PHP 8.4** and **Laravel 12 or 13**. PHP 8.4 brings lazy objects, which the package
+uses for `$config` in the views (see below). Laravel 11 is no longer supported, it is end of life and
+Composer refuses to install it because of open security advisories.
 
 For most projects `composer require flyo/nitro-laravel:^4.0` is all it takes. Go through the
 checklist below to be sure, it takes a few minutes.
 
 ### Checklist
 
-0. **Still on Laravel 11?** Upgrade to Laravel 12 first, see
-   [From Laravel 11](#from-laravel-11). With 3.6 of this package, which supports both.
+0. **Still on PHP 8.3 or Laravel 11?** Move the server to PHP 8.4 and the project to Laravel 12
+   first, while it is still on 3.6 of this package, which supports both. See
+   [From Laravel 11](#from-laravel-11).
 
 1. **Does `routes/web.php` contain a `Route::fallback()`?** Then it replaces the route of all CMS
    pages, see [Own fallback route](#own-fallback-route). The package tells you: outside of
@@ -41,9 +43,8 @@ checklist below to be sure, it takes a few minutes.
    php artisan route:list
    ```
 
-3. **Does code look at the route of a CMS page or at the shared `$config`?** Search for
-   `route()->uri()`, `Route::current()`, `Route::getRoutes()`, `Route::has(` and `getShared()`, see
-   [Breaking changes](#breaking-changes) 3 and 5.
+3. **Does code look at the route of a CMS page?** Search for `route()->uri()`, `Route::current()`,
+   `Route::getRoutes()` and `Route::has(`, see [Breaking changes](#breaking-changes) 3.
 
 4. **Optional: cache the routes.** Add `php artisan route:cache` (or `php artisan optimize`) to the
    deploy. Never with 3.x.
@@ -162,11 +163,11 @@ changes there.
    this for every application with a route which matches every path. Adjust monitoring or firewall
    rules which count 404s, if any.
 
-5. **`$config` comes from a view composer instead of `View::share()`.** Every view still gets it,
-   but `View::getShared()` and `View::shared('config')` no longer contain it. A view which is handed
-   a variable `config` of its own, or a `config` your application shares, keeps it. Resolve the
-   config with `app(\Flyo\Model\ConfigResponse::class)` or constructor injection instead of reading
-   the shared view data.
+5. **`$config` in the views is a lazy object.** It is still shared with every view and is a
+   `Flyo\Model\ConfigResponse` for every type check, but it loads the config only when a view reads
+   it. Nothing has to change in your views. The only difference: it is not the same object as
+   `app(\Flyo\Model\ConfigResponse::class)`, so compare the two with `==`, not `===`, if you ever
+   do.
 
 6. **A Flyo outage only fails the requests which need the config.** Until 3.x every request failed
    with a 500, so an uptime check of `/up` noticed it. Monitor a CMS page if you want to know. If
@@ -193,24 +194,20 @@ changes there.
 11. **The route cache contains the page middleware.** If you cache routes, run
     `php artisan route:cache` again after changing `page_middleware`, `sitemap` or `page_fallback`.
 
+12. **PHP 8.4 and Laravel 12 or 13 are required.** See the beginning of this section.
+
 ### What's new
 
 1. **`page_fallback`** (default `true`): turn the fallback route of the package off and register
    your own, see above.
-2. **`config_views`** (default `'*'`, every view): the views which get `$config`. Narrow it to your
-   layouts, so partials, mails and Livewire updates do not load the config:
-
-   ```diff
-    // config/flyo.php
-   +'config_views' => ['layouts.*', 'components.layout'],
-   ```
-
+2. **`$config` costs nothing until it is used.** A view, a partial, a mail or a Livewire update
+   which does not read `$config` no longer loads the config, without any setting.
 3. **`PageRoutes::dispatch($request)`** and **`PageRoutes::find($request)`** for an own fallback
    route.
 4. **Route names:** the route of the CMS pages is `flyo.page`, the sitemap `flyo.sitemap`.
 
-A project which published `config/flyo.php` before does not have the two new keys, both fall back
-to their default, so republishing the config file is not required.
+A project which published `config/flyo.php` before does not have the new key, it falls back to its
+default, so republishing the config file is not required.
 
 ### Unchanged
 

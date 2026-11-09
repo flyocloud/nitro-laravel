@@ -15,7 +15,7 @@ use Throwable;
  * Boots the service provider the way it boots for an http request, not for the command line.
  *
  * The application of a test does not run on the command line, so it takes the request branch of the
- * service provider: the Configuration, the lazy ConfigResponse and the `$config` view composer are
+ * service provider: the Configuration, the lazy ConfigResponse and the lazy `$config` of the views are
  * bound. The api is faked, every config and page request is recorded instead of sent.
  */
 abstract class HttpTestCase extends TestCase

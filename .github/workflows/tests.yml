@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php-versions: ['8.3', '8.4', '8.5']
+        php-versions: ['8.4', '8.5']
         laravel: ['12', '13']
         stability: ['prefer-stable', 'prefer-lowest']
         include:
@@ -18,9 +18,7 @@ jobs:
           - laravel: '13'
             testbench: '^11.0'
         exclude:
-          # the lowest releases predate the newer PHP versions, they are checked on the lowest PHP
-          - stability: 'prefer-lowest'
-            php-versions: '8.4'
+          # the lowest releases predate the newer PHP version, they are checked on the lowest PHP
           - stability: 'prefer-lowest'
             php-versions: '8.5'
 
